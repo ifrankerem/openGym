@@ -2242,4 +2242,8 @@ export default {
   'Your sports watch, calling you back.': '你的运动手表在叫你回来。',
   'Coach wants you back on the bar.': '教练等你回到杠铃前。',
   'Gentle, for headphones or a quiet room.': '轻柔，适合耳机或安静的房间。',
+  // --- Progression: repeat last session ---
+  'Repeat last session': '重复上次训练',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': '每组都以你上次在此计划中记录的重量和次数开始，不会自动增加或减少。',
+  'Same weight and reps as last time in this routine.': '与上次在此计划中的重量和次数相同。',
 }

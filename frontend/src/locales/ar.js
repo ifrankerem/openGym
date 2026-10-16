@@ -2297,4 +2297,8 @@ export default {
   'Your sports watch, calling you back.': 'ساعتك الرياضية تناديك للعودة.',
   'Coach wants you back on the bar.': 'المدرب يريدك أن تعود إلى البار.',
   'Gentle, for headphones or a quiet room.': 'هادئ، للسماعات أو لغرفة هادئة.',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'تكرار الجلسة الأخيرة',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'تبدأ كل مجموعة بالوزن والتكرارات التي سجّلتها آخر مرة في هذا الروتين. لا يرتفع أو ينخفض شيء من تلقاء نفسه.',
+  'Same weight and reps as last time in this routine.': 'نفس الوزن والتكرارات كآخر مرة في هذا الروتين.',
 }

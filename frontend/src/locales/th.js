@@ -2253,4 +2253,8 @@ export default {
   'Your sports watch, calling you back.': 'นาฬิกาสปอร์ตเรียกคุณกลับมาแล้ว',
   'Coach wants you back on the bar.': 'โค้ชอยากให้คุณกลับมาที่บาร์',
   'Gentle, for headphones or a quiet room.': 'เบา ๆ สำหรับหูฟังหรือห้องที่เงียบ',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'ทำซ้ำเซสชันล่าสุด',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'ทุกเซ็ตเริ่มด้วยน้ำหนักและจำนวนครั้งที่คุณบันทึกครั้งล่าสุดในรูทีนนี้ ไม่มีอะไรเพิ่มหรือลดเอง',
+  'Same weight and reps as last time in this routine.': 'น้ำหนักและจำนวนครั้งเท่ากับครั้งล่าสุดในรูทีนนี้',
 }

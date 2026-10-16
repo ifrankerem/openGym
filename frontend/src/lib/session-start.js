@@ -34,17 +34,20 @@ const carriedWarmupRow = (row, mode) => {
 }
 
 /**
- * The warm-up block "Your last session" carries into a planned build (issue #1), or null when
- * there is nothing to carry — no last entry, no warm-up rows in it, or rows that no longer fit
- * the exercise's mode (a rep count for an exercise that is timed now, or none for one that is
- * reps now). Null means the ramp is built from the routine's `warmupSets` exactly as before.
+ * The warm-up block a planned build carries from the last session (issue #1): "Your last
+ * session" carries it, and so does a "Repeat last session" prescription, which repeats the
+ * whole session warm-ups included. Null when there is nothing to carry — no last entry, no
+ * warm-up rows in it, or rows that no longer fit the exercise's mode (a rep count for an
+ * exercise that is timed now, or none for one that is reps now) — and then the ramp is built
+ * from the routine's `warmupSets` exactly as before, as it is for a repeat's 'restart'.
  */
-function carriedWarmups(st, cfg, routine, noProg) {
-  if (!startsFromLast(st) || noProg || cfg.intensifier?.type === 'restpause') return null
+function carriedWarmups(st, cfg, routine, { noProg = false, kind = '' } = {}) {
+  if (noProg || kind === 'restart' || cfg.intensifier?.type === 'restpause') return null
   const mode = modeOf(cfg)
-  // Progression switched off (its own choice, or a pyramid's) builds warm-ups from the
-  // routine as before. A timed exercise's only policy is 'off', so the gate is reps-only.
-  if (mode !== 'time' && (mode === 'cardio' || policyFor(cfg, routine, mode) === 'off')) return null
+  if (mode === 'cardio') return null
+  // Progression switched off (its own choice, or a pyramid's) builds warm-ups from the routine
+  // as before. A timed exercise's only policy is 'off', so the gate is reps-only.
+  if (kind !== 'repeat' && (!startsFromLast(st) || (mode !== 'time' && policyFor(cfg, routine, mode) === 'off'))) return null
   const rows = lastEntryFor(st, cfg.id, routine?.id)?.warmups || []
   if (!rows.length) return null
   const fits = row => (mode === 'time' ? row.sec > 0 : isSideSet(row) || row.r > 0)
@@ -71,7 +74,11 @@ export function buildPlannedEntry(stored, cfg, routine, { noProg = false } = {})
   // plates exist), not the unit default; a timed exercise's `inc` is seconds, so it keeps the
   // default for its optional load.
   const step = modeOf(cfg) === 'reps' ? weightIncrement(cfg, st.unit) : defaultIncrement(cfg.id, st.unit)
-  const planReps = !startsFromLast(st)
+  // "Repeat last session" (kind 'repeat') opens every row at what was logged, reps included;
+  // its 'restart' — nothing of this routine's to repeat, or an edited plan — opens at the
+  // routine's own numbers the way progression off does (lib/progression.js repeatPrescription).
+  const planReps = plan.kind !== 'repeat' && !startsFromLast(st)
+  const useTarget = plan.kind === 'off' || plan.kind === 'restart'
   // Warm-ups ramp over the dumbbells you own when the profile lists them (issue #376): a rung
   // lands on the heaviest bell under it, never on a weight in between that no rack holds.
   const ramp = (modeOf(cfg) === 'reps' && ownedWeightsFor(st, cfg)) || step
@@ -79,8 +86,8 @@ export function buildPlannedEntry(stored, cfg, routine, { noProg = false } = {})
   const backoffStep = modeOf(cfg) === 'reps' && backoffStepOf(cfg, st.unit) ? step : 0
   // Warm-ups carried from the last session ("Your last session") are final: they go in front
   // AFTER the prescription, back-off and intensifier steps, none of which may rewrite them.
-  const warmCarry = carriedWarmups(st, cfg, routine, noProg)
-  const built = applyPrescription(buildSets(st, warmCarry ? { ...cfg, warmupSets: 0 } : cfg, { step: ramp, rid: routine?.id, useTarget: plan.kind === 'off', planReps }), plan, ramp, barFloor(st, cfg.id))
+  const warmCarry = carriedWarmups(st, cfg, routine, { noProg, kind: plan.kind })
+  const built = applyPrescription(buildSets(st, warmCarry ? { ...cfg, warmupSets: 0 } : cfg, { step: ramp, rid: routine?.id, useTarget, planReps }), plan, ramp, barFloor(st, cfg.id))
   const rows = backoffStep ? applyBackoff(built, backoffStep) : built
   const shaped = applyIntensifierPlan(rows, cfg, dropGrid(st, cfg))
   const sets = warmCarry ? [...warmCarry, ...shaped] : shaped
@@ -103,7 +110,7 @@ export function buildPlannedEntry(stored, cfg, routine, { noProg = false } = {})
   // Rows that opened at last session's reps rather than the plan's ("Your last session", and no
   // policy that decided reps), so the workout card can say where the number came from. Written
   // only when true, and never saved with the finished workout.
-  const carried = !planReps && plan.kind !== 'off' && plan.reps == null && modeOf(cfg) === 'reps'
+  const carried = !planReps && !useTarget && plan.reps == null && modeOf(cfg) === 'reps'
     && rows.some(s => !isWarmupRow(s) && s.r !== cfg.reps)
   // `planned` is what the routine asked for, kept apart from the target the prescription moved,
   // so the next session can tell an edited plan from a progressed one (nextPrescription).

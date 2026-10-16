@@ -2246,4 +2246,8 @@ export default {
   'Your sports watch, calling you back.': 'Ваши спортивные часы зовут вас обратно.',
   'Coach wants you back on the bar.': 'Тренер ждёт вас обратно у штанги.',
   'Gentle, for headphones or a quiet room.': 'Тихий, для наушников или спокойного зала.',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'Повторять прошлую тренировку',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Каждый подход начинается с веса и повторений, записанных в прошлый раз в этой программе. Ничего не растёт и не снижается само.',
+  'Same weight and reps as last time in this routine.': 'Тот же вес и повторения, что и в прошлый раз в этой программе.',
 }
