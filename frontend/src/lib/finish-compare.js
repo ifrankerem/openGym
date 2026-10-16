@@ -6,10 +6,13 @@ import { isWarmupRow, isFailureSet } from './workout-model.js'
 import { buildPlannedEntry } from './session-start.js'
 import { workoutAt, modeOf } from './history.js'
 
-const workSets = entry => (Array.isArray(entry?.sets) ? entry.sets : [])
-  .filter(s => s && s.done && !isWarmupRow(s) && Number(s.r) > 0)
-  // `f`: taken to failure, so the summary can mark it; written only when true.
+// Every row the summary can print: warm-ups left out, each reduced to its load and reps.
+// `f`: taken to failure, so the summary can mark it; written only when true.
+const rowsOf = sets => (Array.isArray(sets) ? sets : [])
+  .filter(s => s && !isWarmupRow(s) && Number(s.r) > 0)
   .map(s => ({ w: Number(s.w) || 0, r: Math.round(Number(s.r)), ...(isFailureSet(s) ? { f: true } : {}) }))
+
+const workSets = entry => rowsOf((Array.isArray(entry?.sets) ? entry.sets : []).filter(s => s?.done))
 
 const top = sets => sets.reduce((m, s) => Math.max(m, s.w), 0)
 const reps = sets => sets.reduce((n, s) => n + s.r, 0)
@@ -49,7 +52,12 @@ export function finishCompare(st, w) {
       try {
         const built = buildPlannedEntry(st, cfg, routine)
         const nw = built.target?.weight, nr = built.target?.reps
-        if (nw != null || nr != null) {
+        if (built.plan?.kind === 'repeat') {
+          // "Repeat last session" has no single number to promise — it opens at the sets logged,
+          // weight and reps set by set — so the line shows those rows rather than one weight off
+          // the routine's target, which read as "0 kg × 8 · lighter" (issue #13).
+          next = { rows: rowsOf(built.sets), kind: 'hold' }
+        } else if (nw != null || nr != null) {
           const kind = built.plan?.kind === 'deload' ? 'deload'
             : nw != null && nw > top(today) + 1e-9 ? 'up'
               : nw != null && nw < top(today) - 1e-9 ? 'down' : 'hold'
