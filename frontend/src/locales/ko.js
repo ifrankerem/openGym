@@ -2242,4 +2242,8 @@ export default {
   'Your sports watch, calling you back.': '스포츠 시계가 다시 부르고 있어요.',
   'Coach wants you back on the bar.': '코치가 바 앞으로 돌아오래요.',
   'Gentle, for headphones or a quiet room.': '이어폰이나 조용한 곳에 어울려요.',
+  // --- Progression: repeat last session ---
+  'Repeat last session': '지난 세션 반복',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': '모든 세트가 이 루틴에서 지난번에 기록한 중량과 횟수로 시작합니다. 저절로 오르거나 내리지 않습니다.',
+  'Same weight and reps as last time in this routine.': '이 루틴의 지난번과 같은 중량과 횟수입니다.',
 }

@@ -2245,4 +2245,8 @@ export default {
   'Your sports watch, calling you back.': 'A sportórád visszahív.',
   'Coach wants you back on the bar.': 'Az edző visszavár a rúdhoz.',
   'Gentle, for headphones or a quiet room.': 'Halk, fülhallgatóhoz vagy csendes helyre.',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'Utolsó edzés megismétlése',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Minden sorozat azzal a súllyal és ismétlésszámmal indul, amit legutóbb ebben a rutinban rögzítettél. Semmi sem nő vagy csökken magától.',
+  'Same weight and reps as last time in this routine.': 'Ugyanaz a súly és ismétlés, mint legutóbb ebben a rutinban.',
 }

@@ -145,3 +145,66 @@ describe('planned warm-ups carried from last session', () => {
     expect(warmups(entryFor(restPauseState))).toEqual(generatedWarmups(restPauseState))
   })
 })
+
+describe('repeat last session carries its warm-ups too', () => {
+  const repeatRoutine = exCfg => ({ id: 'A', name: 'A', prog: 'repeat', ex: [exCfg] })
+  const lastSession = [
+    loggedWarmup(20, 12), loggedWarmup(30, 8), loggedWarmup(40, 5),
+    { w: 70, r: 8, done: true }, { w: 67.5, r: 9, done: true }, { w: 65, r: 12, done: true },
+  ]
+  const repeatCfg = extra => ({ id: BENCH, sets: 3, reps: 10, weight: 60, mode: 'reps', ...extra })
+
+  for (const startFrom of ['plan', 'last']) {
+    it(`carries the logged warm-ups and work rows whatever S.startFrom says (${startFrom})`, () => {
+      const routine = repeatRoutine(repeatCfg())
+      const entry = entryFor(state(routine, lastSession, startFrom))
+      expect(entry.plan).toMatchObject({ policy: 'repeat', kind: 'repeat' })
+      expect(warmups(entry).map(row => [row.w, row.r])).toEqual([[20, 12], [30, 8], [40, 5]])
+      expect(warmups(entry).every(row => row.done === false)).toBe(true)
+      expect(work(entry).map(row => [row.w, row.r])).toEqual([[70, 8], [67.5, 9], [65, 12]])
+      expect(entry.carried).toBe(true)
+    })
+  }
+
+  it('falls back to the generated ramp when the repeated session logged no warm-ups', () => {
+    const routine = repeatRoutine(repeatCfg({ warmupSets: 2 }))
+    const logged = lastSession.filter(row => !isWarmupRow(row))
+    const entry = entryFor(state(routine, logged, 'plan'))
+    expect(entry.plan.kind).toBe('repeat')
+    expect(warmups(entry)).toHaveLength(2)
+    expect(warmups(entry).every(row => row.done === false && isWarmupRow(row))).toBe(true)
+    expect(work(entry).map(row => [row.w, row.r])).toEqual([[70, 8], [67.5, 9], [65, 12]])
+  })
+
+  it('restarts from the routine numbers with a generated ramp when nothing was logged yet', () => {
+    const routine = repeatRoutine(repeatCfg({ warmupSets: 2 }))
+    const entry = entryFor(state(routine, [], 'plan'))
+    const off = entryFor(state({ ...repeatRoutine(repeatCfg({ prog: 'off', warmupSets: 2 })) }, [], 'plan'))
+    expect(entry.plan).toMatchObject({ policy: 'repeat', kind: 'restart' })
+    expect(warmups(entry)).toEqual(warmups(off))
+    expect(warmups(entry)).toHaveLength(2)
+    expect(work(entry).map(row => [row.w, row.r])).toEqual([[60, 10], [60, 10], [60, 10]])
+  })
+
+  it('restarts from the routine numbers when the only history lives in another routine', () => {
+    const a = repeatRoutine(repeatCfg({ warmupSets: 2 }))
+    const b = { id: 'B', name: 'B', ex: [repeatCfg({ sets: 2, reps: 15, weight: 40 })] }
+    const st = {
+      unit: 'kg', exWeights: {}, routines: [a, b], startFrom: 'plan', workouts: [{
+        id: 'prior', d: '2026-09-01', routineIds: ['B'],
+        entries: [{
+          id: BENCH, rid: 'B',
+          target: { sets: 2, reps: 15, weight: 40 },
+          planned: { sets: 2, reps: 15, weight: 40 },
+          sets: [loggedWarmup(22, 11), { w: 40, r: 15, done: true }, { w: 40, r: 15, done: true }],
+        }],
+      }], week: {}, dayPlan: {},
+    }
+    const entry = buildSessionEntries(st, a)[0]
+    const off = buildSessionEntries({ ...st, routines: [{ ...a, ex: [{ ...a.ex[0], prog: 'off' }] }] }, { ...a, ex: [{ ...a.ex[0], prog: 'off' }] })[0]
+    expect(entry.plan).toMatchObject({ policy: 'repeat', kind: 'restart' })
+    expect(warmups(entry)).toEqual(warmups(off))
+    expect(warmups(entry).map(row => [row.w, row.r])).not.toEqual([[22, 11]])
+    expect(work(entry).map(row => [row.w, row.r])).toEqual([[60, 10], [60, 10], [60, 10]])
+  })
+})

@@ -14,6 +14,10 @@ export const PT_BR_OVERRIDES = {
   'Open exercise settings': 'Abrir configurações do exercício',
   'Order and supersets': 'Ordem e supersets',
   'Sets, reps, rest, progression': 'Séries, reps, descanso, progressão',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'Repetir a última sessão',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Cada série começa com o peso e as repetições que você registrou da última vez nesta rotina. Nada sobe nem desce sozinho.',
+  'Same weight and reps as last time in this routine.': 'Mesmo peso e repetições da última vez nesta rotina.',
   'This workout': 'Este treino',
   'Default ({0})': 'Padrão ({0})',
   'Rest for this exercise': 'Descanso deste exercício',

@@ -1198,6 +1198,35 @@ describe('preview_session', () => {
     only({ id: '0025', sets: 3, reps: 8, weight: 50 })
     expect(() => call('preview_session', { routine_id: 'nope' })).toThrow(/no routine with id/)
   })
+
+  test('repeat last session opens at the logged numbers and says they came from last time', () => {
+    only({ id: '0025', sets: 3, reps: 10, weight: 60 }, {
+      prog: 'repeat',
+      workouts: [{
+        id: 'w1', d: '2026-07-20', routineId: 'r-preview', name: 'Preview',
+        entries: [{
+          id: '0025', rid: 'r-preview',
+          target: { id: '0025', sets: 3, reps: 10, weight: 60 },
+          planned: { sets: 3, reps: 10, weight: 60 },
+          sets: [{ w: 70, r: 8, done: true }, { w: 67.5, r: 9, done: true }, { w: 65, r: 12, done: true }]
+        }]
+      }]
+    })
+    const e = call('preview_session').exercises[0]
+    expect(e.prescription).toMatchObject({ kind: 'repeat' })
+    expect(e.opening_sets.map(s => [s.w, s.r])).toEqual([[70, 8], [67.5, 9], [65, 12]])
+    expect(e.weight_source).toBe('last_session')
+    expect(e.reps_source).toBe('last_session')
+  })
+
+  test('repeat with nothing to repeat opens the routine plan and says so', () => {
+    only({ id: '0025', sets: 3, reps: 10, weight: 60 }, { prog: 'repeat' })
+    const e = call('preview_session').exercises[0]
+    expect(e.prescription.kind).toBe('restart')
+    expect(e.opening_sets.map(s => [s.w, s.r])).toEqual([[60, 10], [60, 10], [60, 10]])
+    expect(e.weight_source).toBe('routine_plan')
+    expect(e.reps_source).toBe('routine_plan')
+  })
 })
 
 /* ---------- a workout's photos and videos ---------- */

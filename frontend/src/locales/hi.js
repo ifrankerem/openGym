@@ -2242,4 +2242,8 @@ export default {
   'Your sports watch, calling you back.': 'आपकी स्पोर्ट्स घड़ी आपको वापस बुला रही है।',
   'Coach wants you back on the bar.': 'कोच आपको बार पर वापस चाहते हैं।',
   'Gentle, for headphones or a quiet room.': 'धीमी, हेडफ़ोन या शांत कमरे के लिए।',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'पिछला सत्र दोहराएँ',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'हर सेट उसी वज़न और रेप्स से शुरू होता है जो आपने इस रूटीन में पिछली बार दर्ज किए थे। कुछ भी अपने आप ऊपर या नीचे नहीं जाता।',
+  'Same weight and reps as last time in this routine.': 'इस रूटीन में पिछली बार जितना ही वज़न और रेप्स।',
 }
