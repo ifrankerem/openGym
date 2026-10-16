@@ -36,6 +36,9 @@ fi
 BUILD_TOOLS="$SDK/build-tools/$(ls -1 "$SDK/build-tools" | sort -V | tail -1)"
 ZIPALIGN="$BUILD_TOOLS/zipalign"
 APKSIGNER="$BUILD_TOOLS/apksigner"
+# Gradle reads the SDK from the environment; an unset ANDROID_HOME otherwise fails the build
+# with "SDK location not found".
+export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
 
 # The bundle asks this fork's releases for updates (VITE_UPDATE_REPO, lib/update.js).
 cd "$FRONTEND"
@@ -57,8 +60,17 @@ mkdir -p "$OUT_DIR"
 
 # Align first, sign second: a signature covers the aligned bytes, not the other way round.
 "$ZIPALIGN" -f -p 4 "$UNSIGNED" "$ALIGNED"
+# apksigner takes one password per line from a `file:` — the store one first, then the key one.
+# A single-line pass file means both are the same, so it is doubled into a private temp copy
+# (mktemp is 0600) rather than putting a password on a command line.
+SIGN_PASS="$PASS_FILE"
+if [ "$(wc -l < "$SIGN_PASS")" -lt 2 ]; then
+  SIGN_PASS="$(mktemp)"
+  trap 'rm -f "$SIGN_PASS"' EXIT
+  awk '{ print; print }' "$PASS_FILE" > "$SIGN_PASS"
+fi
 "$APKSIGNER" sign --ks "$KEYSTORE" --ks-key-alias "$KEY_ALIAS" \
-  --ks-pass "file:$PASS_FILE" --key-pass "file:$PASS_FILE" \
+  --ks-pass "file:$SIGN_PASS" --key-pass "file:$SIGN_PASS" \
   --out "$APK" "$ALIGNED"
 "$APKSIGNER" verify "$APK"
 ( cd "$OUT_DIR" && sha256sum "$(basename "$APK")" > "$(basename "$APK").sha256" )
