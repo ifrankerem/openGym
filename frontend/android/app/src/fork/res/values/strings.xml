@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Fork-only overrides (issue #4): this fork's APK installs beside the official openGym and
+         shows as its own app. Merged over src/main/res for the fork variant only; the release
+         and debug builds keep their own names. -->
+    <string name="app_name">openGym+</string>
+    <string name="title_activity_main">openGym+</string>
+</resources>
