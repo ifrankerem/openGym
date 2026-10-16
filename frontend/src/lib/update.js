@@ -11,7 +11,13 @@
 
 import { MOBILE } from './mobile.js'
 
-const REPO = 'DuarteSantos8/openGym'
+const DEFAULT_REPO = 'DuarteSantos8/openGym'
+// Which releases the update check asks (issue #4): this fork's, when the APK build set
+// VITE_UPDATE_REPO to `owner/name` (scripts/build-fork-apk.sh). Anything that is not
+// owner/name — unset, empty, a bare word, spaces, more than one slash — reads as upstream,
+// so the web build and the official APK behave exactly as before.
+const REPO = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(import.meta.env?.VITE_UPDATE_REPO || '')
+  ? import.meta.env.VITE_UPDATE_REPO : DEFAULT_REPO
 const LATEST_URL = `https://api.github.com/repos/${REPO}/releases/latest`
 export const RELEASES_PAGE = `https://github.com/${REPO}/releases/latest`
 

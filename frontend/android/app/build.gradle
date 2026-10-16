@@ -34,6 +34,16 @@ android {
             // overlay in src/debug/res. The release build (the "real" app) is untouched.
             applicationIdSuffix ".test"
         }
+        fork {
+            // This fork's own APK (issue #4): installs beside the official openGym, under its own
+            // id and name (the src/fork resource overlay), so both can live on one device and the
+            // official app and its data are never touched. Built and signed by
+            // scripts/build-fork-apk.sh. `initWith release` copies the release settings; the
+            // fallback lists release because the Capacitor plugin modules only build that pair.
+            initWith release
+            applicationIdSuffix ".fork"
+            matchingFallbacks = ['release']
+        }
     }
 }
 
