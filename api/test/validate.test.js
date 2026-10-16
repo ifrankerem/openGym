@@ -150,6 +150,13 @@ test('triple progression and its set ceiling survive a created plan', () => {
   assert.equal(wild.bundle.routines[0].ex[0].setsMax, undefined);
 });
 
+test('a routine exercise may repeat its last session', () => {
+  const r = validatePlan({ routines: [{ id: 'r1', name: 'A', ex: [{ id: '0001', sets: 3, reps: 10, prog: 'repeat' }] }] });
+  assert.equal(r.ok, true);
+  assert.equal(r.bundle.routines[0].ex[0].prog, 'repeat');
+  assert.equal(review([change({ type: 'exercise-prog', after: 'repeat' })]).ok, true);
+});
+
 test('unilateral reps are a total across both sides, so an odd one is refused', () => {
   const odd = validatePlan({ routines: [{ id: 'r1', name: 'A', ex: [{ id: '0043', sets: 3, reps: 15, side: true }] }] });
   assert.equal(odd.ok, false);

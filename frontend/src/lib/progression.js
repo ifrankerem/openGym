@@ -24,13 +24,15 @@ import { isPyramid } from './pyramid.js'
 import { backoffAt } from './backoff.js'
 import { ownedWeightsFor, ownedUp, ownedDeload, ownedAround } from './dumbbells.js'
 
-export const POLICIES = ['off', 'linear', 'greyskull', 'double', 'triple', 'time']
+export const POLICIES = ['off', 'linear', 'greyskull', 'double', 'triple', 'time', 'repeat']
 
 // Which policies can sensibly drive which logging mode.
+// `repeat` copies the last session as it was logged, whatever was logged, so it fits every mode —
+// and a routine set to it repeats its timed holds and cardio too, not only its lifts.
 export const POLICIES_FOR = {
-  reps: ['off', 'linear', 'greyskull', 'double', 'triple'],
-  time: ['off', 'time'],
-  cardio: ['off']
+  reps: ['off', 'linear', 'greyskull', 'double', 'triple', 'repeat'],
+  time: ['off', 'time', 'repeat'],
+  cardio: ['off', 'repeat']
 }
 
 export const POLICY_NAME = {
@@ -39,7 +41,8 @@ export const POLICY_NAME = {
   greyskull: 'Greyskull LP',
   double: 'Double progression',
   triple: 'Triple progression',
-  time: 'Add time'
+  time: 'Add time',
+  repeat: 'Repeat last session'
 }
 export const POLICY_DESC = {
   off: 'Targets stay where you set them.',
@@ -47,7 +50,8 @@ export const POLICY_DESC = {
   greyskull: 'Two straight sets plus a final set taken to failure. Beat the target on that set and the weight goes up (twice as much if you double the reps). One failure resets 10 %.',
   double: 'Work up through a rep range at the same weight. Reach the top of the range in every set and the weight goes up, reps back to the bottom.',
   triple: 'Reps climb to the top of the range, then a set is added, up to your most sets. All of them at the top and the weight goes up, back to your first sets and reps.',
-  time: 'Hold every set for the full duration and the target goes up.'
+  time: 'Hold every set for the full duration and the target goes up.',
+  repeat: 'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.'
 }
 
 // The Epley target is a soft objective mapped onto the exercise's real load grid. Keep the
@@ -450,6 +454,7 @@ export function nextPrescription(S, cfg, routine) {
     ? (cfg.inc > 0 ? cfg.inc : DEFAULT_SEC_INCREMENT)
     : weightIncrement(cfg, unit)
   if (policy === 'off') return { policy, kind: 'off' }
+  if (policy === 'repeat') return repeatPrescription(S, cfg, routine, mode)
   // An assistance machine progresses downwards: the stack carries part of your weight, so the
   // reward for a clean session is less help, and a stall means taking more (issue #232). Only
   // the direction changes — the step, the grid and the stall counting are the same.
@@ -745,13 +750,30 @@ export function nextPrescription(S, cfg, routine) {
 }
 
 /**
+ * "Repeat last session": no rule decides a number. The rows open as this routine last logged
+ * the exercise, set by set (kind 'repeat', built by buildSets from history with the logged reps,
+ * see session-start.js), so a weight or rep count changed during a workout is what the next one
+ * opens with. Nothing to repeat yet in this routine — never logged, or only in another routine —
+ * or a plan edited since that session opens at the routine's own target (kind 'restart'): one
+ * routine's numbers never leak into another's (!71), and an edited plan means the new numbers.
+ */
+function repeatPrescription(S, cfg, routine, mode) {
+  const sessions = sessionsFor(S, cfg.id, cfg, routine?.id).filter(s => s.mode === mode)
+  const last = sessions[sessions.length - 1]
+  if (!last) return { policy: 'repeat', kind: 'restart', why: ['Nothing logged yet, so this session sets the baseline.'] }
+  if (routine?.id && last.rid !== routine.id) return { policy: 'repeat', kind: 'restart', why: ['First time in this routine, so starting from its own target.'] }
+  if (last.planned && planChanged(last.planned, cfg)) return { policy: 'repeat', kind: 'restart', why: ['Plan changed, so starting from your new target.'] }
+  return { policy: 'repeat', kind: 'repeat', why: ['Same weight and reps as last time in this routine.'] }
+}
+
+/**
  * Apply a prescription to freshly built sets. Only the fields the policy actually decided
  * are touched, and only on sets that have not been logged yet. `floor` is the lift's bar
  * (history.js barFloor), which the re-ramped warm-ups never go under.
  */
 export function applyPrescription(sets, p, step = 2.5, floor = 0) {
   // A first session has nothing to prescribe from, except triple progression's start of a cycle.
-  if (!p || p.kind === 'off' || (p.kind === 'first' && !p.rowReps)) return sets
+  if (!p || p.kind === 'off' || p.kind === 'repeat' || p.kind === 'restart' || (p.kind === 'first' && !p.rowReps)) return sets
   const out = sets.map(s => {
     // Never rewrite a logged set (a ticked warm-up falling through here would be the data-loss
     // the cascade fix removed, two files over). The prescription speaks to the work rows; an

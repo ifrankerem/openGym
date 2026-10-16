@@ -2242,4 +2242,8 @@ export default {
   'Your sports watch, calling you back.': 'Tu reloj deportivo te llama de vuelta.',
   'Coach wants you back on the bar.': 'El coach te quiere de vuelta en la barra.',
   'Gentle, for headphones or a quiet room.': 'Suave, para auriculares o una sala tranquila.',
+  // --- Progression: repeat last session ---
+  'Repeat last session': 'Repetir la última sesión',
+  'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Cada serie empieza con el peso y las repeticiones que registraste la última vez en esta rutina. Nada sube ni baja por sí solo.',
+  'Same weight and reps as last time in this routine.': 'Mismo peso y repeticiones que la última vez en esta rutina.',
 }
