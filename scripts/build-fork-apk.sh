@@ -60,7 +60,7 @@ mkdir -p "$OUT_DIR"
 "$APKSIGNER" sign --ks "$KEYSTORE" --ks-key-alias "$KEY_ALIAS" \
   --ks-pass "file:$PASS_FILE" --key-pass "file:$PASS_FILE" \
   --out "$APK" "$ALIGNED"
-"$ZIPALIGN" -f -p 4 "$APK" "$APK"
+"$APKSIGNER" verify "$APK"
 ( cd "$OUT_DIR" && sha256sum "$(basename "$APK")" > "$(basename "$APK").sha256" )
 
 echo "$APK"
