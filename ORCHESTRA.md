@@ -1,6 +1,6 @@
 # Orchestra
 
-This repository runs the orchestra: a brain (Claude Code or Codex) plans and reviews, and OpenCode agents write the tests (`orchestra-tester`) and the code (`orchestra-worker`). Brain rules: `~/.orchestra/BRAIN.md`.
+This repository runs the orchestra: a brain plans and reviews, and OpenCode agents write the tests (`orchestra-tester`) and the code (`orchestra-worker`). Brain rules: `~/.orchestra/BRAIN.md`.
 
 GitHub: ifrankerem/openGym
 
@@ -43,7 +43,7 @@ The five api test files left out above already fail on upstream `main`: their fi
 
 Files every agent reads before working:
 
-- `CLAUDE.md` (architecture, where logic lives)
+- The architecture notes at the repository root (project layout, where the logic lives)
 - `CONTRIBUTING.md` (dependency-light, style, tests, locales)
 - The task issue
 
