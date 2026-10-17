@@ -46,7 +46,7 @@ import { nextOpenSet, workoutKeyAction } from '../lib/workout-keys.js'
 import { MUSCLE_NAME } from '../lib/muscles.js'
 import FocusView from './FocusView.jsx'
 import { withMeaning, historyAs, dbLoadFor, entryDbLoad, bellsIn, ownedWeightsFor, stepOwned } from '../lib/dumbbells.js'
-import { sessionEntryInUnit, exerciseUnit, canPinUnit, cfgInUnit, UNIT_PLACES_STORED } from '../lib/exercise-unit.js'
+import { sessionEntryInUnit, exerciseUnit, canPinUnit, cfgInUnit, exerciseView, UNIT_PLACES_STORED } from '../lib/exercise-unit.js'
 import { useExerciseView } from '../store/useExerciseView.js'
 
 // How long after a key starts a hold the same key is not yet its "Done" (#133). A USB button
@@ -1191,12 +1191,18 @@ function ActiveWorkout() {
     }
   })
   const removeSet = idx => mutEntry(idx, e => { e.sets = removeLastSet(e.sets) })
-  const addWarmup = idx => mutEntry(idx, e => {
-    const m = modeOf({ ...(e.target || {}), id: e.id })
-    // A warm-up of a dumbbell lift lands on a bell you own when the profile lists them (#376).
-    const ramp = (m === 'reps' && ownedWeightsFor(S, { ...(e.target || {}), id: e.id })) || defaultIncrement(e.id, S.unit)
-    e.sets = insertWarmupRow(e.sets, m, e.target || {}, ramp, barFloor(S, e.id))
-  })
+  const addWarmup = idx => {
+    // The ramp runs on the exercise's own increment, bells and bar (issue #20): a pinned exercise's
+    // rows are in its unit, so a warm-up stepped in the profile's unit would land between the
+    // loads — a kg bench stepping in 5 lb increments, floored at the 45 lb bar. An unpinned one
+    // reads the state itself and ramps exactly as before.
+    const view = exerciseView(S, A.entries[idx]?.id)
+    mutEntry(idx, e => {
+      const m = modeOf({ ...(e.target || {}), id: e.id })
+      const ramp = (m === 'reps' && ownedWeightsFor(view, { ...(e.target || {}), id: e.id })) || defaultIncrement(e.id, view.unit)
+      e.sets = insertWarmupRow(e.sets, m, e.target || {}, ramp, barFloor(view, e.id))
+    })
+  }
   // The set-number menu's Remove and the swipe both go through deleteActiveSet, Undo and all.
   const removeSetAt = (idx, i) => deleteActiveSet(idx, i, { editing })
   const pairAt = (first, second) => update(s => {
