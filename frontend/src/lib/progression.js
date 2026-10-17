@@ -109,6 +109,9 @@ export function policyFor(cfg, routine, mode) {
 }
 
 const round1 = v => Math.round(v * 10) / 10
+// A weight off the increment's grid (a quarter on a 2.5 step) keeps both of its decimals:
+// 61.25 + 2.5 is 63.75, not 63.8 (the same complaint as issue #139).
+const round2 = v => Math.round(v * 100) / 100
 // Snap to a loadable multiple of the step. Manual weight controls use this same normalization
 // so fractional increments produce the same number as automatic progression.
 export function snapWeight(v, step) {
@@ -126,7 +129,7 @@ export function addStep(w, step, inc) {
   const v = +w || 0
   const onGrid = inc > 0 && Math.abs(v - Math.round(v / inc) * inc) <= 0.1
   const next = v + step
-  return Math.max(0, onGrid ? snapWeight(next, inc) : round1(next))
+  return Math.max(0, onGrid ? snapWeight(next, inc) : round2(next))
 }
 export function stepWeight(value, step, direction) {
   const v = Number(value) || 0

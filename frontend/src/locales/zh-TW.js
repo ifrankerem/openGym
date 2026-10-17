@@ -2239,4 +2239,6 @@ export default {
   'Repeat last session': '重複上次訓練',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': '每組都以你上次在此課表記錄的重量和次數開始，不會自動增加或減少。',
   'Same weight and reps as last time in this routine.': '與上次在此課表的重量和次數相同。',
+  'For this exercise, in every routine. Its history is converted.': '僅針對這個動作，所有課表皆適用。歷史紀錄會換算。',
+  'Same as your profile': '與你的個人檔案相同',
 }

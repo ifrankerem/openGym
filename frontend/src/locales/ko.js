@@ -2246,4 +2246,6 @@ export default {
   'Repeat last session': '지난 세션 반복',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': '모든 세트가 이 루틴에서 지난번에 기록한 중량과 횟수로 시작합니다. 저절로 오르거나 내리지 않습니다.',
   'Same weight and reps as last time in this routine.': '이 루틴의 지난번과 같은 중량과 횟수입니다.',
+  'For this exercise, in every routine. Its history is converted.': '이 운동에 대해, 모든 루틴에 적용됩니다. 기록은 변환됩니다.',
+  'Same as your profile': '프로필과 동일',
 }

@@ -2243,4 +2243,6 @@ export default {
   'Repeat last session': 'Повторювати останнє тренування',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Кожен підхід починається з ваги й повторень, записаних минулого разу в цій програмі. Нічого не зростає й не знижується саме.',
   'Same weight and reps as last time in this routine.': 'Та сама вага й повторення, що й минулого разу в цій програмі.',
+  'For this exercise, in every routine. Its history is converted.': 'Для цієї вправи, у всіх програмах. Її історія перераховується.',
+  'Same as your profile': 'Як у твоєму профілі',
 }
