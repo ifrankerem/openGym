@@ -28,6 +28,25 @@ describe('workoutCardModel', () => {
 
   const stat = m => m.stats.map(s => s.label + ' ' + s.value)
 
+  // A per-exercise unit (issue #11): the card keeps its totals in the profile's unit and answers
+  // the same whether or not it is given `unitOf` — there is no per-exercise set line on it today.
+  const pinned = {
+    ...w, vol: 6610,
+    entries: [
+      { id: 'bench', target: { mode: 'reps' }, sets: [{ w: 135, r: 5, done: true }] },
+      { id: 'curl', target: { mode: 'reps' }, sets: [{ w: 77.1618, r: 10, done: true }] },
+    ],
+  }
+  const unitOf = id => (id === 'curl' ? 'kg' : 'lb')
+
+  it('answers the same whether or not a unitOf is given, totals in the profile unit', () => {
+    const withPins = workoutCardModel(pinned, { unit: 'lb', nameOf, unitOf })
+    const without = workoutCardModel(pinned, { unit: 'lb', nameOf })
+    expect(stat(withPins)).toContain('Volume 6,610 lb')
+    expect(withPins.records).toEqual(without.records)
+    expect(withPins.stats.map(s => s.value)).toEqual(without.stats.map(s => s.value))
+  })
+
   it('says the name, the dated day, duration, work sets and volume', () => {
     const m = workoutCardModel(w, { unit: 'kg', nameOf })
     expect(m.title).toBe('Push')

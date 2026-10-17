@@ -16,6 +16,7 @@ import { fatigueOf, strengthOf, STRENGTH_FLOOR, LB_TO_KG } from '../lib/recovery
 import { strengthExerciseRowsForMuscle } from '../lib/strength-exercises.js'
 import { fatigueStateOf } from '../lib/recovery-view.js'
 import { e1rmSeries, best1RM, formulaOf } from '../lib/onerm.js'
+import { exerciseUnit, exerciseView, convertExact, UNIT_PLACES_SHOWN } from '../lib/exercise-unit.js'
 import { currentDbLoad, workoutAs } from '../lib/dumbbells.js'
 import { maxRepsSeries } from '../lib/pyramid.js'
 import { perSetSessions, perSetLines, dropOffSet } from '../lib/per-set.js'
@@ -491,7 +492,14 @@ export default function Stats() {
       const mx = mode === 'reps'
         ? data.best
         : Math.max(0, ...rows.map(s => mode === 'cardio' ? toSpeed(s.speed || 0, speedUnit) : mode === 'time' ? (s.sec || 0) : (s.w || 0)))
-      if (mx > 0) return { mx, unit: mode === 'cardio' ? speedLabel(speedUnit) : mode === 'time' ? 's' : S.unit }
+      // A pinned exercise is charted and labelled in its own unit (issue #11); cardio keeps the
+      // profile's speed unit and a hold its seconds, as before.
+      if (mx > 0) {
+        if (mode === 'cardio') return { mx, unit: speedLabel(speedUnit) }
+        if (mode === 'time') return { mx, unit: 's' }
+        const unit = exerciseUnit(S, id)
+        return { mx: convertExact(mx, S.unit || 'kg', unit, UNIT_PLACES_SHOWN), unit }
+      }
       // Unloaded reps work still has a current figure — its rep count. Without this the whole
       // picker label went blank and the exercise sorted to the bottom as if it had no history.
       if (mode === 'reps') {
@@ -499,7 +507,7 @@ export default function Stats() {
         if (reps > 0) return { mx: reps, unit: t('reps') }
       }
     }
-    return { mx: 0, unit: S.unit }
+    return { mx: 0, unit: exerciseUnit(S, id) }
   }
   const exHist = [...new Set(workouts.flatMap(w => w.entries.map(e => e.id)))].filter(id => EXIDX[id] || nameOf(id) !== id)
   const exCurrent = Object.fromEntries(exHist.map(id => [id, currentOf(id)]))
@@ -526,13 +534,18 @@ export default function Stats() {
   // them (issue #5). When nothing in an exercise's history was ever loaded, the progress IS
   // the rep count, so plot that. Add a weighted set later and it switches back to weight on
   // its own, which is also the honest reading: that is when load became the thing improving.
-  const repsOnly = curEx && curMode === 'reps' && !workouts.some(w =>
+  // Everything this card plots for the selected exercise comes from a view of the state where
+  // that exercise's weights are in its own unit (issue #11, lib/exercise-unit.js), and the unit
+  // printed beside them is the view's. An unpinned exercise gets the state back unchanged.
+  const exView = useMemo(() => (curEx ? exerciseView(S, curEx) : S), [S, curEx])
+  const exWorkouts = curEx ? exView.workouts : workouts
+  const repsOnly = curEx && curMode === 'reps' && !exWorkouts.some(w =>
     entriesForExercise(w, curEx).some(en => bestWeightForEntry(en) > 0))
   const metric = s => curCardio ? toSpeed(s.speed || 0, speedUnit) : curTimed ? (s.sec || 0) : (s.w || 0)
-  const exUnit = curCardio ? speedLabel(speedUnit) : curTimed ? 's' : repsOnly ? t('reps') : S.unit
+  const exUnit = curCardio ? speedLabel(speedUnit) : curTimed ? 's' : repsOnly ? t('reps') : exerciseUnit(S, curEx)
   let exPts = [], exList = [], exBest = 0
   if (curEx) {
-    workouts.forEach(w => {
+    exWorkouts.forEach(w => {
       const data = metricDataOf(w, curEx)
       if (data.mode === curMode) {
         const doneSets = data.rows
@@ -558,11 +571,11 @@ export default function Stats() {
   // tooltip vanish under your finger the moment anything else on this screen re-rendered.
   // Memoising only the .map() would not have helped — its dependency was itself rebuilt each time.
   const e1Pts = useMemo(
-    () => (curEx && curMode === 'reps' ? e1rmSeries(S, curEx) : []),
-    [S, curEx, curMode],
+    () => (curEx && curMode === 'reps' ? e1rmSeries(exView, curEx) : []),
+    [exView, curEx, curMode],
   )
   const e1ChartPts = useMemo(() => e1Pts.filter(p => p.t >= exFrom).map(p => ({ t: p.t, y: p.y, d: p.d })), [e1Pts, exFrom])
-  const e1Best = curEx && curMode === 'reps' ? best1RM(S, curEx) : null
+  const e1Best = curEx && curMode === 'reps' ? best1RM(exView, curEx) : null
   const showE1 = e1Pts.length > 0
   // Effort on this exercise, per session. It rides on the top-set curve as well as having a
   // curve of its own, because the two only mean something together: the same weight moved
@@ -573,8 +586,8 @@ export default function Stats() {
   // Pyramid sets' Max sets: the most reps in one, per workout — the point of a Max set is seeing
   // that number climb, which the top-set weight line does not show.
   const maxPts = useMemo(
-    () => (curEx && curMode === 'reps' ? maxRepsSeries(workouts, curEx).map(p => ({ t: p.t, y: p.y, d: p.d, note: p.w > 0 ? fmtNum(p.w) + ' ' + S.unit : undefined })) : []),
-    [workouts, curEx, curMode, S.unit],
+    () => (curEx && curMode === 'reps' ? maxRepsSeries(exWorkouts, curEx).map(p => ({ t: p.t, y: p.y, d: p.d, note: p.w > 0 ? fmtNum(p.w) + ' ' + exUnit : undefined })) : []),
+    [exWorkouts, curEx, curMode, exUnit],
   )
   const showMax = maxPts.length > 0
   const maxBest = showMax ? Math.max(...maxPts.map(p => p.y)) : 0
@@ -590,8 +603,8 @@ export default function Stats() {
     if (!curEx || curMode !== 'reps') return null
     const usable = list => list.length >= 2 && list.some(s => s.sets.length >= 2)
     let metric = repsOnly || isAssisted(curEx) ? 'reps' : 'e1rm'
-    let sessions = perSetSessions(workouts, curEx, { metric, formula: oneRmFormula })
-    if (metric === 'e1rm' && !usable(sessions)) sessions = perSetSessions(workouts, curEx, { metric: metric = 'reps' })
+    let sessions = perSetSessions(exWorkouts, curEx, { metric, formula: oneRmFormula })
+    if (metric === 'e1rm' && !usable(sessions)) sessions = perSetSessions(exWorkouts, curEx, { metric: metric = 'reps' })
     if (!usable(sessions)) return null
     const { lines, hidden } = perSetLines(sessions)
     const shown = new Set(lines.map(l => l.n))
@@ -606,7 +619,7 @@ export default function Stats() {
       metric,
       drop: dropOffSet(sessions),
     }
-  }, [workouts, curEx, curMode, repsOnly, oneRmFormula])
+  }, [exWorkouts, curEx, curMode, repsOnly, oneRmFormula])
   // The same sessions cut to the range; a set number with nothing left in it drops out of the legend.
   const perSetChart = useMemo(() => {
     if (!perSet) return null
@@ -712,7 +725,7 @@ export default function Stats() {
             {rangeTooShort
               ? <div className="empty small">{t('Fewer than two workouts in this period. Pick a longer one.')}</div>
               : onSets
-              ? <LineChart points={perSetChart.anchors} series={perSetChart.series} h={150} unit={perSet.metric === 'reps' ? t('reps') : S.unit} />
+              ? <LineChart points={perSetChart.anchors} series={perSetChart.series} h={150} unit={perSet.metric === 'reps' ? t('reps') : exUnit} />
               : onMax
               ? <LineChart points={maxChartPts} h={150} unit={t('reps')} color="var(--blue)" />
               : onEff
@@ -728,7 +741,7 @@ export default function Stats() {
             <span className="muted">{fmtDate(p.d, true)}</span><span>{p.sets.map(s => setLabel(curEx, s, p.target, speedUnit)).join('  ')}</span></div>)}</div>
           <div className="small dim" style={{ marginTop: 8 }}>
             {onSets ? (perSet.metric === 'reps' ? t('Reps in each working set, one line per set number') : t('Estimated 1RM of each working set, one line per set number')) : onMax ? <>{t('Most reps in a Max set per workout')} · {t('Best:')}{' '}<b className="accent">{maxBest} {t('reps')}</b></> : onEff ? t('Average effort per workout') : onE1 ? t('Estimated 1RM per workout') : curCardio ? t('Top speed per workout') : curTimed ? t('Longest hold per workout') : repsOnly ? t('Most reps in a set per workout') : t('Best set weight per workout')}
-            {onEff || onMax || onSets ? '' : <> · {t('Best:')}{' '}<b className="accent">{fmtNum(onE1 ? e1Best.est : exBest)} {onE1 ? S.unit : exUnit}</b></>}
+            {onEff || onMax || onSets ? '' : <> · {t('Best:')}{' '}<b className="accent">{fmtNum(onE1 ? e1Best.est : exBest)} {exUnit}</b></>}
           </div>
           {onSets && (perSet.drop || perSet.hidden > 0) && <div className="small dim" style={{ marginTop: 4 }}>
             {perSet.drop && t('Where you most often drop off: set {0} ({1} of {2} workouts)', perSet.drop.n, perSet.drop.count, perSet.drop.of)}
@@ -736,7 +749,7 @@ export default function Stats() {
             {perSet.hidden > 0 && t('Only the first {0} sets are drawn.', perSet.ns.length)}
           </div>}
           {onE1 && <div className="small dim" style={{ marginTop: 4 }}>
-            {t('Best estimate from {0} on {1}. An estimate, not a tested max.', fmtNum(e1Best.w) + ' ' + S.unit + ' × ' + e1Best.r, fmtDate(e1Best.d, true))}
+            {t('Best estimate from {0} on {1}. An estimate, not a tested max.', fmtNum(e1Best.w) + ' ' + exUnit + ' × ' + e1Best.r, fmtDate(e1Best.d, true))}
           </div>}
           {!onEff && !onE1 && !onMax && !onSets && showEff && <div className="small dim" style={{ marginTop: 4 }}>
             {t('A fuller dot means less left in the tank. The same weight at a lower {0} is progress the line alone doesn’t show.', hd)}
