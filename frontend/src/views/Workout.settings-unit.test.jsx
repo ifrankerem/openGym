@@ -38,6 +38,9 @@ function mount() {
     id: 'settings-unit', d: '2026-10-03', start: Date.now(), routineIds: ['r1'], name: 'Push', bw: null, cur: 0,
     entries: [{
       id: BENCH, rid: 'r1',
+      // A running entry of a pinned exercise holds its weights in the pin unit and says so
+      // (task 05). Without the stamp the switch reads 35 as 35 lb and makes it 16 kg.
+      unit: 'kg',
       target: { id: BENCH, sets: 3, reps: 8, weight: 35, inc: 2.5, mode: 'reps' },
       planned: { sets: 3, reps: 8, weight: 35 },
       sets: [{ w: 35, r: 8, done: false }, { w: 35, r: 8, done: false }, { w: 35, r: 8, done: false }],
