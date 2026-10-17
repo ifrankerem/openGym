@@ -150,6 +150,16 @@ export function exerciseView(S, exId) {
 }
 
 /**
+ * A running session as it is stored: every entry that says which unit its weights are in comes
+ * back converted into the profile unit, unstamped, so the saved workout holds only profile-unit
+ * numbers. A session with no pinned exercise is `active` itself.
+ */
+export function activeToProfileUnit(active, profileUnit) {
+  if (!Array.isArray(active?.entries) || !active.entries.some(e => e?.unit)) return active
+  return { ...active, entries: active.entries.map(e => entryToProfileUnit(e, profileUnit)) }
+}
+
+/**
  * Pin an exercise to a unit, or unpin it back to the profile's: a new state with the pin
  * stamped, every stored weight of that exercise snapped once onto the unit's plate grid, and
  * the active entries moved onto it and restamped. A no-op (the unit it already uses, a unit
