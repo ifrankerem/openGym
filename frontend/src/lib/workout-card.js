@@ -31,6 +31,8 @@ const MAP_MAX_HEIGHT = 560
  * summary's muscle map for this one session (levelsOf over loadOfWorkouts), null when no set
  * reached a muscle the map can show — a card of only cardio has nothing to shade.
  */
+// The card shows the session's own totals, never a set line, so a per-exercise unit (`unitOf`,
+// issue #11) changes nothing here — the caller passes it and the card answers exactly as before.
 export function workoutCardModel(w, { unit, nameOf }) {
   const entries = w.entries || []
   const sets = entries.reduce((n, e) => n + (e.sets || []).reduce((m, s) => m + (isWarmupRow(s) ? 0 : doneUnits(s)), 0), 0)
