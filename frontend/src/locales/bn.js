@@ -2325,4 +2325,6 @@ export default {
   'Repeat last session': 'গত সেশন পুনরাবৃত্তি',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'প্রতিটি সেট শুরু হয় এই রুটিনে গতবার যে ওজন ও রেপ দিয়ে শেষ করেছিলেন তা দিয়েই। নিজে থেকে কিছু বাড়ে বা কমে না।',
   'Same weight and reps as last time in this routine.': 'গতবারের মতো একই ওজন ও রেপ, এই রুটিনে।',
+  'For this exercise, in every routine. Its history is converted.': 'এই ব্যায়ামের জন্য, সব রুটিনে। এর ইতিহাস রূপান্তর করা হবে।',
+  'Same as your profile': 'আপনার প্রোফাইলের মতো',
 }

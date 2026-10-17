@@ -2246,4 +2246,6 @@ export default {
   'Repeat last session': 'पिछला सत्र दोहराएँ',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'हर सेट उसी वज़न और रेप्स से शुरू होता है जो आपने इस रूटीन में पिछली बार दर्ज किए थे। कुछ भी अपने आप ऊपर या नीचे नहीं जाता।',
   'Same weight and reps as last time in this routine.': 'इस रूटीन में पिछली बार जितना ही वज़न और रेप्स।',
+  'For this exercise, in every routine. Its history is converted.': 'इस व्यायाम के लिए, हर रूटीन में। इसका इतिहास बदला जाएगा।',
+  'Same as your profile': 'आपकी प्रोफ़ाइल जैसा',
 }

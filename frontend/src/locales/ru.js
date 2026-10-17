@@ -2250,4 +2250,6 @@ export default {
   'Repeat last session': 'Повторять прошлую тренировку',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Каждый подход начинается с веса и повторений, записанных в прошлый раз в этой программе. Ничего не растёт и не снижается само.',
   'Same weight and reps as last time in this routine.': 'Тот же вес и повторения, что и в прошлый раз в этой программе.',
+  'For this exercise, in every routine. Its history is converted.': 'Для этого упражнения, во всех программах. Его история пересчитывается.',
+  'Same as your profile': 'Как в твоём профиле',
 }

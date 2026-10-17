@@ -2246,4 +2246,6 @@ export default {
   'Repeat last session': 'Son antrenmanı tekrarla',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Her set, bu rutinde en son kaydettiğin ağırlık ve tekrarla başlar. Hiçbir şey kendiliğinden artmaz ya da azalmaz.',
   'Same weight and reps as last time in this routine.': 'Bu rutinde son seferki ağırlık ve tekrar.',
+  'For this exercise, in every routine. Its history is converted.': 'Bu hareket için, tüm rutinlerde geçerli. Geçmişi de çevrilir.',
+  'Same as your profile': 'Profilinle aynı',
 }

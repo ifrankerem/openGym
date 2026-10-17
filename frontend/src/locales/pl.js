@@ -2246,4 +2246,6 @@ export default {
   'Repeat last session': 'Powtórz ostatni trening',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Każda seria zaczyna się od ciężaru i powtórzeń zapisanych ostatnio w tej rutynie. Nic samo nie rośnie ani nie spada.',
   'Same weight and reps as last time in this routine.': 'Ten sam ciężar i powtórzenia co ostatnio w tej rutynie.',
+  'For this exercise, in every routine. Its history is converted.': 'Dla tego ćwiczenia, we wszystkich planach. Jego historia zostanie przeliczona.',
+  'Same as your profile': 'Tak jak w profilu',
 }
