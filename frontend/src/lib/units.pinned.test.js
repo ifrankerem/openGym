@@ -31,12 +31,12 @@ const slotW = S => S.routines[0].ex[0].weight
 
 describe('profile unit switch with a pinned exercise', () => {
   it('lb to kg converts the pinned exercise exactly, not onto the kg grid', () => {
-    // 135 lb is 61.235 kg exactly; the grid would say 61.25.
+    // 135 lb is 61.2349 kg at stored places; the grid would say 61.25.
     const S = state('lb', 'kg', { pressW: 135, exW: 135 })
     const out = convertStateUnit(S, 'kg')
-    expect(pressW(out)).toBe(61.235)
-    expect(out.exWeights[PRESS].w).toBe(61.235)
-    expect(slotW(out)).toBe(61.235)
+    expect(pressW(out)).toBe(61.2349)
+    expect(out.exWeights[PRESS].w).toBe(61.2349)
+    expect(slotW(out)).toBe(61.2349)
     expect(out.exUnit).toEqual({ [PRESS]: { unit: 'kg', _ts: 1 } })
   })
 
