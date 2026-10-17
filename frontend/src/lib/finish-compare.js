@@ -5,6 +5,7 @@
 import { isWarmupRow, isFailureSet } from './workout-model.js'
 import { buildPlannedEntry } from './session-start.js'
 import { workoutAt, modeOf } from './history.js'
+import { exerciseUnit, convertExact, UNIT_PLACES_SHOWN } from './exercise-unit.js'
 
 // Every row the summary can print: warm-ups left out, each reduced to its load and reps.
 // `f`: taken to failure, so the summary can mark it; written only when true.
@@ -35,15 +36,26 @@ export function finishCompare(st, w) {
     if (!entry?.id || seen.has(entry.id)) continue
     const mode = modeOf(entry.target || entry)
     if (mode !== 'reps') continue
-    const today = workSets(entry)
-    if (!today.length) continue
+    const logged = workSets(entry)
+    if (!logged.length) continue
     seen.add(entry.id)
-    let last = null
-    for (let i = workouts.length - 1; i >= 0 && !last; i--) {
+    let previous = null
+    for (let i = workouts.length - 1; i >= 0 && !previous; i--) {
       const prev = (workouts[i].entries || []).find(e => e?.id === entry.id)
       const sets = prev ? workSets(prev) : []
-      if (sets.length) last = sets
+      if (sets.length) previous = sets
     }
+    // A pinned exercise reads today and last time in its own unit (issue #10): the record is
+    // stored in the profile's, and a weight printed under the wrong unit is worse than none.
+    // `next` is built by buildPlannedEntry, which already hands a pinned exercise back in its
+    // own unit, so it is left exactly as built.
+    const profile = st?.unit || 'kg'
+    const unit = exerciseUnit(st, entry.id)
+    const reading = unit === profile
+      ? rows => rows
+      : rows => rows.map(s => ({ ...s, w: convertExact(s.w, profile, unit, UNIT_PLACES_SHOWN) }))
+    const today = reading(logged)
+    const last = previous ? reading(previous) : null
     let next = null
     const routine = entry.rid ? (st.routines || []).find(r => r.id === entry.rid) : null
     const cfg = routine && !routine.excludeFromProgression && !entry.noProg && !w.noProg
@@ -65,7 +77,7 @@ export function finishCompare(st, w) {
         }
       } catch { /* a routine the builder cannot read keeps its row without a "next" */ }
     }
-    rows.push({ id: entry.id, today, last, trend: trendOf(today, last), next })
+    rows.push({ id: entry.id, today, last, trend: trendOf(today, last), next, unit })
   }
   return rows
 }
