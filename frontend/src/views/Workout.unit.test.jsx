@@ -126,8 +126,12 @@ describe('switching one exercise\'s weight unit from the workout', () => {
 
   it('picking lb again unpins it and the card is back on lb', () => {
     mount({ pinKg: true })
-    act(() => itemNamed(openExerciseMenu(), 'Weight unit').click())
-    act(() => itemNamed(renderTopSheet(), 'lb').click())
+    // Hoisted out of the act() below: React does not flush a nested act, so opening the menu
+    // inside it left the sheet unrendered and the item undefined.
+    const menu = openExerciseMenu()
+    act(() => itemNamed(menu, 'Weight unit').click())
+    const unitMenu = renderTopSheet()
+    act(() => itemNamed(unitMenu, 'lb').click())
 
     expect(useStore.getState().S.exUnit[BENCH].unit).toBeNull()
     expect(headOf()).toBe('Weight (lb)')
