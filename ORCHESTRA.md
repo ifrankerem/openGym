@@ -24,9 +24,7 @@ Every command passes before a PR is ready, and the brain runs them again before 
 - `cd frontend && npm run build`
 - `cd frontend && node scripts/check-locales.mjs`
 - `cd mcp && npm test && npm run check:node-loadable`
-- `cd api && node --test $(ls test/*.test.js | grep -v -E 'coach-limits|jobs|payload-bounds|payload\.test|routes\.test')`
-
-The five api test files left out above already fail on upstream `main`: their fixture workout is dated 2026-07-20 and has aged out of the Coach's history window. They are not this fork's problem; a task that touches `api/coach/` runs them anyway and must not add a failure to them.
+- `cd api && npm test`
 
 ## Tests
 
