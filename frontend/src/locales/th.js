@@ -2257,4 +2257,6 @@ export default {
   'Repeat last session': 'ทำซ้ำเซสชันล่าสุด',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'ทุกเซ็ตเริ่มด้วยน้ำหนักและจำนวนครั้งที่คุณบันทึกครั้งล่าสุดในรูทีนนี้ ไม่มีอะไรเพิ่มหรือลดเอง',
   'Same weight and reps as last time in this routine.': 'น้ำหนักและจำนวนครั้งเท่ากับครั้งล่าสุดในรูทีนนี้',
+  'For this exercise, in every routine. Its history is converted.': 'สำหรับท่านี้ ในทุกรูทีน ประวัติของท่าจะถูกแปลง',
+  'Same as your profile': 'เหมือนโปรไฟล์ของคุณ',
 }

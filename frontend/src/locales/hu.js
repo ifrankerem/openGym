@@ -2249,4 +2249,6 @@ export default {
   'Repeat last session': 'Utolsó edzés megismétlése',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Minden sorozat azzal a súllyal és ismétlésszámmal indul, amit legutóbb ebben a rutinban rögzítettél. Semmi sem nő vagy csökken magától.',
   'Same weight and reps as last time in this routine.': 'Ugyanaz a súly és ismétlés, mint legutóbb ebben a rutinban.',
+  'For this exercise, in every routine. Its history is converted.': 'Ehhez a gyakorlathoz, minden rutinban. Az előzményei átváltásra kerülnek.',
+  'Same as your profile': 'Ugyanaz, mint a profilod',
 }

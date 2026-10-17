@@ -3391,7 +3391,7 @@ describe('the workout screen chrome (v1.3.11)', () => {
     expect(groups).toEqual([
       ['Today', ['Swap exercise', 'Add warm-up set', 'Add note', 'Don’t count for progression']],
       ['Look it up', ['History', 'How to do it']],
-      ['Settings', ['Exercise settings', 'Rest timer', 'Plate loading']],
+      ['Settings', ['Exercise settings', 'Weight unit', 'Rest timer', 'Plate loading']],
       ['Order and supersets', ['Make superset with next', 'Move up', 'Move down']],
       [undefined, ['Remove exercise']],
     ])

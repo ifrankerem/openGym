@@ -2246,4 +2246,6 @@ export default {
   'Repeat last session': 'Répéter la dernière séance',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Chaque série démarre avec la charge et les répétitions enregistrées la dernière fois dans cette routine. Rien ne monte ni ne baisse tout seul.',
   'Same weight and reps as last time in this routine.': 'Même charge et mêmes répétitions que la dernière fois dans cette routine.',
+  'For this exercise, in every routine. Its history is converted.': 'Pour cet exercice, dans toutes les routines. Son historique est converti.',
+  'Same as your profile': 'Comme ton profil',
 }

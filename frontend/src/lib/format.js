@@ -55,9 +55,13 @@ export const exerciseNameText = ex => (exerciseNameClass(ex) ? capWords(exercise
 let decimals = 1
 export const setWeightDecimals = n => { decimals = n === 2 ? 2 : 1 }
 export const weightDecimals = () => decimals
-export const fmtNum = n => {
-  const p = decimals === 2 ? 100 : 10
-  return (Math.round(n * p) / p).toLocaleString(dateLocale(), { maximumFractionDigits: decimals })
+// `places` (only ever 2) keeps a quarter visible whatever the profile's setting is: an exercise
+// pinned to kg loads 61.25 while an lb profile is set to one decimal, and reading that as 61.3
+// is the complaint issue #139 is about. Still only precision the number really has.
+export const fmtNum = (n, places) => {
+  const quarters = places === 2 || decimals === 2
+  const p = quarters ? 100 : 10
+  return (Math.round(n * p) / p).toLocaleString(dateLocale(), { maximumFractionDigits: quarters ? 2 : decimals })
 }
 // Plate sizes keep their quarter: 1.25 and 21.25 are real numbers on a plate and a bar.
 export const fmtPlate = n => (Math.round(n * 100) / 100).toLocaleString(dateLocale())

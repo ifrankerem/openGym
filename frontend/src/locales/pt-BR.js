@@ -15,6 +15,8 @@ export const PT_BR_OVERRIDES = {
   'Order and supersets': 'Ordem e supersets',
   'Sets, reps, rest, progression': 'Séries, reps, descanso, progressão',
   // --- Progression: repeat last session ---
+  'For this exercise, in every routine. Its history is converted.': 'Para este exercício, em todas as rotinas. O histórico dele é convertido.',
+  'Same as your profile': 'Igual ao seu perfil',
   'Repeat last session': 'Repetir a última sessão',
   'Every set opens with the weight and reps you logged last time in this routine. Nothing goes up or down on its own.': 'Cada série começa com o peso e as repetições que você registrou da última vez nesta rotina. Nada sobe nem desce sozinho.',
   'Same weight and reps as last time in this routine.': 'Mesmo peso e repetições da última vez nesta rotina.',
@@ -1409,4 +1411,5 @@ export const PT_BR_OVERRIDES = {
   'Releases are checked on GitHub. The download is verified against its checksum before the installer opens.': 'As versões são verificadas no GitHub. O download é conferido pela soma de verificação antes de abrir o instalador.',
 }
 
-export default { ...pt, ...PT_BR_OVERRIDES }
+export default { ...pt, ...PT_BR_OVERRIDES
+}
