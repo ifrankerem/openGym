@@ -16,6 +16,7 @@ import { bestWeightForEntry, workoutVolume } from './history.js'
 import { hasCompletedWork } from './workout-model.js'
 import { stampWorkout } from './sync-merge.js'
 import { legacySyncKey, rebuildPrHistory } from './workout-date.js'
+import { sessionEntryInUnit, activeToProfileUnit } from './exercise-unit.js'
 
 const clone = value => structuredClone(value)
 const list = v => (Array.isArray(v) ? v : [])
@@ -121,6 +122,9 @@ export function editCompletedSession(state, ref) {
   // The workout's photos and videos are not the editor's: they stay on the saved record, which
   // Save spreads under the edit, and the detail sheet adds or removes them there meanwhile.
   delete active.media
+  // A pinned exercise is edited in its own unit, stamped as such (lib/exercise-unit.js); Save
+  // converts the draft back, so an untouched draft leaves the record as it was.
+  if (Array.isArray(active.entries)) active.entries = active.entries.map(e => sessionEntryInUnit(state, e))
   state.active = active
   return active
 }
@@ -143,7 +147,7 @@ export function saveWorkoutEdit(state, now = Date.now()) {
   // Never saved empty: the editor asks to delete the workout instead (deleteEditedWorkout).
   if (editLeftEmpty(active)) throw new Error('Nothing logged yet')
   const current = state.workouts[index]
-  const record = draftRecord(active, current, key)
+  const record = draftRecord(active, current, key, state.unit)
   // A Save that changed nothing closes the editor and leaves the record as it is. A new stamp
   // would outrank an edit another device made since and has not synced yet (sets added on the
   // phone), for nothing — the date and duration rows skip an unchanged save the same way.
@@ -178,11 +182,13 @@ export function editChangesNothing(state) {
   if (key == null || editLeftEmpty(active)) return false
   const current = list(state.workouts).find(w => keyOf(w) === key)
   if (!current) return false
-  return sameData(comparable(draftRecord(active, current, key)), comparable(current))
+  return sameData(comparable(draftRecord(active, current, key, state.unit)), comparable(current))
 }
 
-// The record Save would write for this draft over `current`, before its volume and stamp.
-function draftRecord(active, current, key) {
+// The record Save would write for this draft over `current`, before its volume and stamp. The
+// draft is in the units its entries were logged in; the record is in the profile unit.
+function draftRecord(active, current, key, profileUnit = 'kg') {
+  active = activeToProfileUnit(active, profileUnit)
   const updated = buildCompletedWorkout(active, {
     end: current.end,
     prs: current.prs || [],
