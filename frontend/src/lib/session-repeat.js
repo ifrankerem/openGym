@@ -13,6 +13,7 @@ import { buildSets, applyIntensifierPlan, modeOf, setsFromRows } from './history
 import { isWarmupRow } from './workout-model.js'
 import { dropGrid } from './plates.js'
 import { weightIncrement, defaultIncrement } from './progression.js'
+import { sessionEntryInUnit } from './exercise-unit.js'
 
 const sourceEntries = w => (Array.isArray(w?.entries) ? w.entries : []).filter(entry => entry?.sets?.length)
 
@@ -43,7 +44,7 @@ export function repeatSessionEntries(st, w, { exists = id => !!EXIDX[id] } = {})
     const only = { ...st, workouts: [{ ...w, entries: [source] }] }
     const sets = applyIntensifierPlan(buildSets(only, cfg, { step, preferLast: true }), cfg, dropGrid(st, cfg))
       .map(row => ({ ...row, done: false }))
-    entries.push({ id: cfg.id, ...(sg ? { sg } : {}), target: { ...cfg }, plan: null, sets })
+    entries.push(sessionEntryInUnit(st, { id: cfg.id, ...(sg ? { sg } : {}), target: { ...cfg }, plan: null, sets }))
   })
   return { entries: regroup(entries), skipped }
 }

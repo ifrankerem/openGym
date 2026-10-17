@@ -56,7 +56,7 @@ import { finishCompare, finishCardio } from './lib/finish-compare.js'
 import { workoutFit, fitFileName } from './lib/fit-export.js'
 import { joinSessionNoProg } from './lib/session-noprog.js'
 import { buildCombinedEntries, deriveSessionName } from './lib/session-merge.js'
-import { activeToProfileUnit } from './lib/exercise-unit.js'
+import { activeToProfileUnit, sessionEntryInUnit } from './lib/exercise-unit.js'
 import { workoutsOn, backfillStart, backfillEnd, completeBackfill, historyAsOf, sessionHistory } from './lib/backfill.js'
 import { moveWorkout, sameWorkout, startTimeOf, durationMinOf, setWorkoutDuration, rebuildPrHistory, MAX_DURATION_MIN, endsInFuture } from './lib/workout-date.js'
 import { editCompletedSession, editLeftEmpty, editedRecord, editChangesNothing } from './lib/session-edit.js'
@@ -1438,7 +1438,8 @@ export function swapActiveWorkoutExercise(index) {
     const built = freestyle
       ? { target: withMeaning(st, cfg, ex.id), plan: null, sets: applyIntensifierPlan(buildSets(historyAs(past, ex.id, dbLoadFor(st, full)), full, { step: (modeOf(full) === 'reps' && ownedWeightsFor(st, full)) || step, preferLast: true }), full, dropGrid(st, full)) }
       : buildPlannedEntry(past, full, slotRoutine, { noProg: builtOutOfProgression(current, slotRoutine) })
-    const replacement = {
+    // A pinned exercise joins the session in its own unit, stamped as such (lib/exercise-unit.js).
+    const replacement = sessionEntryInUnit(st, {
       id: ex.id,
       ...built,
       ...(current.rid ? { rid: current.rid } : {}),
@@ -1448,7 +1449,7 @@ export function swapActiveWorkoutExercise(index) {
       // prescription (above): one kept out by hand keeps the marker and its Undo on the card,
       // and an Undo must leave numbers that are right to count.
       ...(current.noProg === true ? { noProg: true } : {}),
-    }
+    })
 
     const apply = options => {
       // A timed callback closes over entry/set indexes. Invalidate it, and the current rest,
