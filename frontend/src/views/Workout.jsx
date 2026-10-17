@@ -46,7 +46,7 @@ import { nextOpenSet, workoutKeyAction } from '../lib/workout-keys.js'
 import { MUSCLE_NAME } from '../lib/muscles.js'
 import FocusView from './FocusView.jsx'
 import { withMeaning, historyAs, dbLoadFor, entryDbLoad, bellsIn, ownedWeightsFor, stepOwned } from '../lib/dumbbells.js'
-import { sessionEntryInUnit, exerciseUnit, canPinUnit } from '../lib/exercise-unit.js'
+import { sessionEntryInUnit, exerciseUnit, canPinUnit, cfgInUnit, UNIT_PLACES_STORED } from '../lib/exercise-unit.js'
 import { useExerciseView } from '../store/useExerciseView.js'
 
 // How long after a key starts a hold the same key is not yet its "Done" (#133). A USB button
@@ -1506,6 +1506,9 @@ function ActiveWorkout() {
     // The sheet opens at the plan's sets and reps rather than today's prescription (see
     // plannedConfigOf), so saving it unchanged rebuilds the rows the entry already has.
     const opened = plannedConfigOf(entry)
+    // The sheet edits in the unit the entry's numbers are in — the exercise's own when it is
+    // pinned to one (issue #9) — and hands them back in it.
+    const cfgUnit = entry.unit || state.unit || 'kg'
     exConfigSheet(exOr(entryId), opened, cfg => {
       // Store updates clone the state tree. If this exact object is no longer at the captured
       // index, the list changed while the sheet was open; an id check alone cannot distinguish
@@ -1520,11 +1523,15 @@ function ActiveWorkout() {
         // The sheet may outlive its workout or entry. Never apply its result to whatever later
         // happens to occupy the same index.
         if (!activeEntry || activeEntry.id !== entryId) return
-        const full = { ...cfg, id: activeEntry.id }
+        // Back into the stored unit before anything reads it: the sheet's numbers are in the
+        // entry's own unit, and the entry is built from the profile's.
+        const stored = c => cfgInUnit(c, cfgUnit, s.unit || 'kg', UNIT_PLACES_STORED)
+        const full = { ...stored(cfg), id: activeEntry.id }
         // The weight the sheet showed is today's. Left as it was, it is not an edit of the plan's:
         // stamped as the plan, a later edit of the reps would restart from today's load as though
-        // it had been typed in (nextPrescription), so the plan keeps its own.
-        if ((cfg.weight || 0) === (opened.weight || 0) && activeEntry.planned?.weight != null) full.weight = activeEntry.planned.weight
+        // it had been typed in (nextPrescription), so the plan keeps its own. The plan's weight
+        // rides on the entry, in the entry's unit, so it converts back with the rest.
+        if ((cfg.weight || 0) === (opened.weight || 0) && activeEntry.planned?.weight != null) full.weight = stored({ weight: activeEntry.planned.weight }).weight
         const activeRoutine = s.routines.find(r => r.id === activeEntry.rid)
         // A config without a set count keeps the rows the session already has.
         if (!(full.sets > 0)) full.sets = activeEntry.sets.filter(x => !isWarmupRow(x)).length || 1
@@ -1548,7 +1555,7 @@ function ActiveWorkout() {
         else delete activeEntry.carried
         activeEntry.sets = [...doneWarm, ...freshWarm.slice(doneWarm.length), ...doneWork, ...freshWork.slice(doneWork.length)]
       })
-    }, null, routine)
+    }, null, routine, null, null, null, { cfgUnit })
   }
 
   // Remove a whole exercise from the session. The confirmation always asks first; in a
