@@ -10,6 +10,7 @@ import Workout from './Workout.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { EXDB } from '../lib/exercises.js'
+import { setExerciseUnit } from '../lib/exercise-unit.js'
 
 vi.mock('../lib/sound.js', () => ({ beep: vi.fn(), vibrate: vi.fn(), unlock: vi.fn(), restOver: vi.fn() }))
 vi.mock('../lib/api.js', () => ({ api: vi.fn(() => Promise.resolve({})) }))
@@ -28,7 +29,11 @@ const work = w => ({ w, r: 8, done: false })
 
 // lb profile, bench at 135, its last session at 135 too. An unpinned exercise to check it is
 // left alone, and a cardio one for the menu that must not offer a unit at all.
-function mount(over = {}) {
+// `pinKg` goes through the switch itself (lib/exercise-unit.js), the only thing that ever writes
+// a pin: it snaps every stored weight of the exercise onto the kg grid. A pin written by hand
+// over unsnapped 135 lb would read as the exact 61.235 the conversion gives, not the 61.25 the
+// lifter actually loaded.
+function mount({ pinKg = false, ...over } = {}) {
   const S = clone(DEF)
   S.unit = 'lb'
   Object.assign(S, over)
@@ -44,7 +49,7 @@ function mount(over = {}) {
       entry(CARDIO, [{ min: 20, speed: 8, done: false }], { mode: 'cardio', sets: 1, min: 20, speed: 8 }),
     ],
   }
-  useStore.setState({ S, user: null })
+  useStore.setState({ S: pinKg ? setExerciseUnit(S, BENCH, 'kg', 1) : S, user: null })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -107,7 +112,7 @@ describe('switching one exercise\'s weight unit from the workout', () => {
   })
 
   it('the card reads, steps and plates in kg once pinned', () => {
-    mount({ exUnit: { [BENCH]: { unit: 'kg', _ts: 1 } } })
+    mount({ pinKg: true })
     expect(headOf()).toBe('Weight (kg)')
     expect(container.querySelector('.setrow input.num').value).toBe('61.25')   // 135 lb on the kg grid
     const bestTag = [...container.querySelectorAll('.tag.nocap')].find(el => el.textContent.includes('Best'))
@@ -120,7 +125,7 @@ describe('switching one exercise\'s weight unit from the workout', () => {
   })
 
   it('picking lb again unpins it and the card is back on lb', () => {
-    mount({ exUnit: { [BENCH]: { unit: 'kg', _ts: 1 } } })
+    mount({ pinKg: true })
     act(() => itemNamed(openExerciseMenu(), 'Weight unit').click())
     act(() => itemNamed(renderTopSheet(), 'lb').click())
 

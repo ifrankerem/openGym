@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workout from './Workout.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
+import { setExerciseUnit } from '../lib/exercise-unit.js'
 
 vi.mock('../lib/sound.js', () => ({ beep: vi.fn(), vibrate: vi.fn(), unlock: vi.fn(), restOver: vi.fn() }))
 vi.mock('../lib/api.js', () => ({ api: vi.fn(() => Promise.resolve({})) }))
@@ -18,7 +19,10 @@ const BENCH = '0025'   // barbell bench press
 
 let root, container
 
-function mount(over = {}) {
+// `pinKg` goes through the switch itself (lib/exercise-unit.js), the only thing that ever writes
+// a pin, so the running entry carries the grid weight the lifter would load rather than the exact
+// conversion of the lb number it was typed as.
+function mount({ pinKg = false, ...over } = {}) {
   const S = clone(DEF)
   S.unit = 'lb'
   Object.assign(S, over)
@@ -31,7 +35,7 @@ function mount(over = {}) {
       sets: [{ w: 135, r: 8, done: false }],
     }],
   }
-  useStore.setState({ S, user: null })
+  useStore.setState({ S: pinKg ? setExerciseUnit(S, BENCH, 'kg', 1) : S, user: null })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -54,7 +58,7 @@ afterEach(() => {
 
 describe('Focus view of a pinned exercise', () => {
   it('shows the load in the exercise\'s unit and steps it there', () => {
-    mount({ exUnit: { [BENCH]: { unit: 'kg', _ts: 1 } } })
+    mount({ pinKg: true })
     expect(loadStepper().querySelector('.stp-l').textContent).toBe('Load (kg)')
     expect(loadInput().value).toBe('61.25')
 

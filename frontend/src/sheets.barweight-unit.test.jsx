@@ -8,6 +8,7 @@ import { barWeightSheet } from './sheets.jsx'
 import { EXDB } from './lib/exercises.js'
 import { DEF, useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
+import { setExerciseUnit } from './lib/exercise-unit.js'
 
 const clone = value => JSON.parse(JSON.stringify(value))
 const BENCH = '0025'   // barbell bench press
@@ -32,11 +33,14 @@ function open() {
 const barStepper = host => [...host.querySelectorAll('.stp-w')]
   .find(el => el.querySelector('.stp-l')?.textContent.startsWith('Bar ('))
 
-function install(over = {}) {
+// `pinKg` goes through the switch itself (lib/exercise-unit.js), the only thing that ever writes
+// a pin. A bar weight that is already exact (33.0693 lb for 15 kg) is what the switch leaves
+// behind, so the state here is one the app can hold.
+function install({ pinKg = false, ...over } = {}) {
   const S = clone(DEF)
   S.unit = 'lb'
   Object.assign(S, over)
-  useStore.setState({ S, user: null })
+  useStore.setState({ S: pinKg ? setExerciseUnit(S, BENCH, 'kg', 1) : S, user: null })
 }
 
 beforeEach(() => {
@@ -50,7 +54,7 @@ afterEach(() => {
 
 describe('bar weight of a pinned exercise', () => {
   it('shows the bar in the exercise\'s unit and stores it in the profile unit', () => {
-    install({ exUnit: { [BENCH]: { unit: 'kg', _ts: 1 } } })
+    install({ pinKg: true })
     const host = open()
     const stepper = barStepper(host)
     expect(stepper.querySelector('.stp-l').textContent).toBe('Bar (kg)')
@@ -61,7 +65,7 @@ describe('bar weight of a pinned exercise', () => {
   })
 
   it('reopens on the number that was set', () => {
-    install({ exUnit: { [BENCH]: { unit: 'kg', _ts: 1 } }, barWeights: { [BENCH]: 33.0693 } })
+    install({ pinKg: true, barWeights: { [BENCH]: 33.0693 } })
     expect(barStepper(open()).querySelector('input').value).toBe('15')
   })
 
