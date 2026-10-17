@@ -3343,7 +3343,7 @@ function LastAndNext({ st, w }) {
         {row.next && (row.next.rows
           // A repeat opens at set-by-set numbers (#13), so the line is the rows themselves.
           ? <div className="small accent">{t('Next time')}: {setsLine(row.next.rows, row.unit)} · {nextWord[row.next.kind]}</div>
-          : <div className="small accent">{t('Next time')}: {row.next.w != null ? fmtNum(row.next.w) + ' ' + st.unit : ''}{row.next.w != null && row.next.r != null ? ' × ' : ''}{row.next.r != null ? row.next.r : ''} · {nextWord[row.next.kind]}</div>)}
+          : <div className="small accent">{t('Next time')}: {row.next.w != null ? fmtNum(row.next.w) + ' ' + row.unit : ''}{row.next.w != null && row.next.r != null ? ' × ' : ''}{row.next.r != null ? row.next.r : ''} · {nextWord[row.next.kind]}</div>)}
       </div>
     })}</div>
   </div>
