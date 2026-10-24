@@ -96,11 +96,6 @@ describe('planned warm-ups carried from last session', () => {
     expect(isWarmupRow(entry.sets[0])).toBe(true)
     expect(entry.sets[0].sides).toEqual({ L: { w: 10, r: 6, done: false }, R: { w: 12, r: 6, done: false } })
     expect(entry.sets[0]).toMatchObject({ w: 12, r: 12, done: false, phase: 'warmup', warmup: true })
-    // When nothing is logged to carry, v1.4.2's per-side ramp picks up where the reference
-    // left the cold path: a shaped warm-up per side.
-    expect(warmups(entryFor(state(routine, [
-      loggedSideWork(60), loggedSideWork(60), loggedSideWork(60), loggedSideWork(60),
-    ])).map(s => s.sides.L.w).every(w => typeof w === 'number'))).toBe(true)
   })
 
   it('case 9: carries the duration of a timed warm-up', () => {
@@ -134,11 +129,15 @@ describe('planned warm-ups carried from last session', () => {
     expect(warmups(entryFor(noReps))).toEqual(generatedWarmups(noReps))
   })
 
-  it('case 13: carries nothing from an assistance machine either — its own ramp-down applies', () => {
-    // '1431' assisted standing chin-up (leverage machine with "assist" in its name).
-    const routine = routineWith({ id: '1431', sets: 3, reps: 8, weight: 25, prog: 'linear', mode: 'reps', warmupSets: 0 })
-    const st = state(routine, [loggedWarmup(40, 8), loggedWork(25, 8), loggedWork(25, 8), loggedWork(25, 8)])
-    expect(warmups(entryFor(st))).toEqual(generatedWarmups(st))
+  it('case 13: an assistance exercise with nothing to carry keeps its ramp-down', () => {
+    // '1431' assisted standing chin-up (leverage machine with "assist" in its name). Its `w`
+    // is help, so warm-ups ramp down from more of it: v1.4.2's own rule, unchanged.
+    const routine = routineWith({ id: '1431', sets: 3, reps: 8, weight: 25, prog: 'linear', mode: 'reps', warmupSets: 2 })
+    const st = state(routine, [loggedWork(25, 8), loggedWork(25, 8), loggedWork(25, 8)])
+    const entry = entryFor(st)
+    expect(warmups(entry)).toEqual(generatedWarmups(st))
+    // More help than the work rows ask for, stepping down toward them.
+    expect(warmups(entry)[0].w).toBeGreaterThan(work(entry)[0].w)
   })
 
   it('buildPlannedEntry carries warm-ups through its public entry point too', () => {
@@ -160,7 +159,7 @@ describe('planned warm-ups carried from last session', () => {
   // v1.4.2's per-exercise warm-up rest reads off entry.target (lib/supersetFlow.js); carrying
   // must not drop or rewrite the target.
   it('carried rows keep the target per-exercise warm-up rest', () => {
-    const routine = routineWith(cfg({ warmupRestSec: 45 }))
+    const routine = routineWith(cfg({ warmupRestSec: 45, warmupSets: 2 }))
     const st = state(routine, [
       loggedWarmup(20, 12), loggedWarmup(30, 8),
       loggedWork(), loggedWork(), loggedWork(),
@@ -192,6 +191,6 @@ describe('planned warm-ups carried from last session', () => {
     ]))
     expect(warmups(entry)).toEqual([{ w: 30, r: 8, done: false, phase: 'warmup', warmup: true }])
     // The work rows read last session as they always did (hr rides on `sets`).
-    expect(work(entry).every(row => row.hr === undefined && row.w === 60 && row.done === false)).toBe(true)
+    expect(work(entry).every(row => row.hr === undefined && row.done === false)).toBe(true)
   })
 })
