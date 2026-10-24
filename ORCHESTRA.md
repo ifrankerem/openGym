@@ -54,6 +54,22 @@ Rules that come from those files and bite most often:
 - Every new UI string goes into every locale file in `frontend/src/locales/` (English is the source and has no file). `node scripts/check-locales.mjs` fails on a missing key. Translate properly; Turkish (`tr.js`) must read naturally.
 - Do not edit the generated `frontend/src/lib/exercises-data.js` by hand.
 
+## Ponytail (simplest complete change)
+
+Both roles write the least code that fully does the task. The brain reviews every PR against these rules before merging and sends back anything that breaks them.
+
+- Before writing, read the task and the code it touches, and list every place the change must reach: callers, tests, fixtures, exports. That is the scope. Extra features are not.
+- Take the first option that fully works: does it need to exist at all → already in this codebase (a helper in `frontend/src/lib/`, a component, a pattern) → the platform or an installed dependency → one plain line → otherwise the minimum code that works.
+- No abstraction, wrapper, option, config or "for later" code the issue does not ask for. Deletion beats addition. Keep the structure, layers and names the codebase already has.
+- The shortest working diff wins, once everything it must touch is covered. A clever one-liner that needs decoding is not short.
+- Comment only the why the code cannot show, in one line.
+- Bug fix: grep every caller of the function first and fix the root cause once in the shared code.
+- Code that is moved or ported keeps its error handling and validation.
+- Never cut: validation at trust boundaries, error handling that prevents data loss, accessibility, anything the issue asks for.
+- Tester: every issue test case is required. Beyond them add none. Keep fixtures small: build state with the existing helpers and only the fields the test reads.
+- Worker: in a port, copy the reference commit's behaviour with the smallest edit to v1.4.2's code; do not re-port lines v1.4.2 already does another way.
+- End the READY reply with one line: what was skipped or not checked.
+
 ## Off limits
 
 Paths no task changes unless the owner says so:
