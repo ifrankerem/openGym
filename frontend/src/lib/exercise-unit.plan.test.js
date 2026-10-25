@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { setExerciseUnit } from './exercise-unit.js'
 import { convertWeight } from './units.js'
 
-// Switching one exercise's weight unit mid-session (issue #40, upstream #657): a pinned
+// Switching one exercise's weight unit mid-session (upstream #657): a pinned
 // exercise's progression line moves with its entry, in the same pass that converts the rows —
 // plan.weight and every load in plan.why onto the entry's new unit's grid, everything else
 // (reps, sets, stall counts) left as it is.
@@ -34,7 +34,7 @@ const state = plan => ({
   },
 })
 
-describe('the switch moves the progression line with the entry (#40)', () => {
+describe('the switch moves the progression line with the entry (upstream #657)', () => {
   it('moves plan.weight and the load args of plan.why onto the new unit', () => {
     const out = setExerciseUnit(state({ kind: 'up', weight: 12.5, why: [WHY_UP, 2.5, 'kg'] }), X, 'lb', 1)
     expect(out.active.entries[0].plan.weight).toBe(convertWeight(12.5, 'kg', 'lb'))
@@ -49,7 +49,9 @@ describe('the switch moves the progression line with the entry (#40)', () => {
   })
 
   it('leaves the args that are not loads alone', () => {
-    const out = setExerciseUnit(state({ kind: 'off', why: [WHY_DELOAD, 3, 50, 'kg', 3, 8] }), X, 'lb', 1)
+    // The deload line (lib/progression.js): one load with its unit, between plain numbers.
+    const out = setExerciseUnit(state({ kind: 'deload', weight: 50, why: [WHY_DELOAD, 3, 50, 'kg', 3, 8] }), X, 'lb', 1)
+    expect(out.active.entries[0].plan.weight).toBe(convertWeight(50, 'kg', 'lb'))
     expect(out.active.entries[0].plan.why).toEqual([WHY_DELOAD, 3, convertWeight(50, 'kg', 'lb'), 'lb', 3, 8])
   })
 
