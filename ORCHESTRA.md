@@ -58,6 +58,7 @@ Rules that come from those files and bite most often:
 
 Mandatory for every role: `~/.orchestra/PONYTAIL.md` (the simplest complete change). Project-specific additions:
 
+- Both roles: code comments and test names that point at an issue use the upstream number `#657` (the per-exercise unit proposal) or another upstream issue, never a fork issue or task number (`#5`, `#31`, "issue #6"): this code goes upstream, where those numbers are other issues.
 - Worker, in a port task: copy the reference commit's behaviour with the smallest edit to v1.4.2's code; do not re-port lines v1.4.2 already does another way.
 
 ## Off limits
