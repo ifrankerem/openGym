@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Finishing a workout stores a pinned exercise back in the profile unit (issue #6): profile
+// Finishing a workout stores a pinned exercise back in the profile unit (upstream #657): profile
 // lb, bench pinned to kg, the session logged at 37.5 kg. The saved workout holds 82.6733 lb
 // with no unit stamp, and the PR and working weight are judged in lb.
 import React, { act } from 'react'
@@ -70,7 +70,7 @@ describe('finish stores a pinned exercise back in the profile unit', () => {
     expect(S().exWeights[BENCH].w).toBe(82.6733)
   })
 
-  // Issue #32: heart rate per set is not a weight — it rides along the conversion untouched.
+  // Upstream #657: heart rate per set is not a weight — it rides along the conversion untouched.
   it('keeps a logged hr on the set while the weights convert', () => {
     install()
     S().active.entries[0].sets[0].hr = 130

@@ -1,4 +1,4 @@
-// Per-exercise weight unit (issue #5, upstream proposal #657): the pure core — which unit an
+// Per-exercise weight unit (upstream #657): the pure core — which unit an
 // exercise uses, a read-only view of the state in that unit, the conversions at its edges, and
 // the switch itself. No store, no UI.
 //
