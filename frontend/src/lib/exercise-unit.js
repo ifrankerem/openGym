@@ -150,6 +150,28 @@ export function exerciseView(S, exId) {
 }
 
 /**
+ * An entry going into a running session, in the unit its exercise is worked in (#657): a pinned
+ * exercise's rows are converted into its pin unit and stamped, and an entry that carries a unit
+ * the exercise no longer works in (a pin changed, or cleared, since the session started) comes
+ * back into the profile unit without the stamp. Anything already in the right unit is the same
+ * object, so an unpinned exercise is untouched.
+ */
+export function sessionEntryInUnit(S, entry) {
+  if (!entry || typeof entry !== 'object') return entry
+  const profile = S?.unit || 'kg'
+  const pin = unitPinOf(S, entry.id)
+  const pinned = !!pin && pin !== profile
+  const has = entry.unit || profile
+  const to = pinned ? pin : profile
+  if (has === to) return entry
+  // Into the pin it is what the lifter reads; back to the profile it is stored, so it keeps
+  // stored places and the record reads back exactly as it was written.
+  const places = pinned ? UNIT_PLACES_SHOWN : UNIT_PLACES_STORED
+  const { unit: _stamp, ...rest } = entryInUnit(entry, has, to, places)
+  return pinned ? { ...rest, unit: pin } : rest
+}
+
+/**
  * A running session as it is stored: every entry that says which unit its weights are in comes
  * back converted into the profile unit, unstamped, so the saved workout holds only profile-unit
  * numbers. A session with no pinned exercise is `active` itself.

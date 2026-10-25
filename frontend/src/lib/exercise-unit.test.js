@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   UNIT_PLACES_STORED, UNIT_PLACES_SHOWN, convertExact, unitPinOf, exerciseUnit,
   canPinUnit, exerciseView, entryToProfileUnit, setExerciseUnit, activeToProfileUnit,
+  sessionEntryInUnit,
 } from './exercise-unit.js'
 import { EXDB } from './exercises.js'
 import { convertStateUnit } from './units.js'
@@ -313,5 +314,39 @@ describe('activeToProfileUnit', () => {
   it('returns the session itself when no entry carries unit', () => {
     const active = { id: 'a1', entries: [{ id: Y, sets: [{ w: 100, r: 5, done: true }] }] }
     expect(activeToProfileUnit(active, 'lb')).toBe(active)
+  })
+})
+
+describe('sessionEntryInUnit', () => {
+  const lbPinned = { unit: 'lb', exUnit: { [X]: { unit: 'kg', _ts: 1 } } }
+  const row = (w, r) => ({ w, r, done: false })
+
+  it('brings a pinned but unstamped entry into the pin unit', () => {
+    const out = sessionEntryInUnit(lbPinned, { id: X, sets: [row(77.1618, 10)] })
+    expect(out.unit).toBe('kg')
+    expect(out.sets).toEqual([row(35, 10)])
+  })
+
+  it('leaves an entry already in the pin unit as the same object', () => {
+    const entry = { id: X, unit: 'kg', sets: [row(35, 10)] }
+    expect(sessionEntryInUnit(lbPinned, entry)).toBe(entry)
+  })
+
+  it('brings a stamped entry back to the profile unit once unpinned', () => {
+    const out = sessionEntryInUnit({ unit: 'lb' }, { id: X, unit: 'kg', sets: [row(35, 10)] })
+    expect('unit' in out).toBe(false)
+    expect(out.sets).toEqual([row(77.1618, 10)])
+  })
+
+  it('brings a stamped entry back when pinned to the profile unit', () => {
+    const S = { unit: 'lb', exUnit: { [X]: { unit: 'lb', _ts: 1 } } }
+    const out = sessionEntryInUnit(S, { id: X, unit: 'kg', sets: [row(35, 10)] })
+    expect('unit' in out).toBe(false)
+    expect(out.sets).toEqual([row(77.1618, 10)])
+  })
+
+  it('leaves an unpinned unstamped entry as the same object', () => {
+    const entry = { id: X, sets: [row(77.1618, 10)] }
+    expect(sessionEntryInUnit({ unit: 'lb' }, entry)).toBe(entry)
   })
 })
