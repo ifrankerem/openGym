@@ -56,6 +56,39 @@ describe('workoutText', () => {
     // with one member left trained is just that exercise
     expect(workoutText(bare, { unit: 'lb', nameOf })).toBe(`Legs · ${fmtDate('2026-09-03', true, true)}\n120 lb\n\nDumbbell Curl\n12×10`)
   })
+
+  // A per-exercise unit (upstream #657): with `unitOf`, each exercise's sets are read in its own
+  // unit and the session's totals stay in the profile's. Without it the text is exactly what it
+  // was.
+  const pinned = {
+    id: 'w1', d: '2026-09-03', start: 0, end: 58 * 60000, name: 'Push', vol: 6610,
+    entries: [
+      { id: 'bench', target: { mode: 'reps' }, sets: [{ w: 135, r: 5, done: true }] },
+      { id: 'curl', target: { mode: 'reps' }, sets: [{ w: 77.1618, r: 10, done: true }] },
+    ],
+  }
+  const unitOf = id => (id === 'curl' ? 'kg' : 'lb')
+
+  it('reads a pinned exercise in its unit and leaves the rest and the totals in lb', () => {
+    const text = workoutText(pinned, { unit: 'lb', nameOf, unitOf })
+    // The curl is pinned to kg: 77.1618 lb is 35 kg.
+    expect(text).toContain('35×10')
+    expect(text).toContain('135×5')
+    expect(text).toContain('6,610 lb')
+  })
+
+  it('without a unitOf the text is exactly what it always was', () => {
+    expect(workoutText(pinned, { unit: 'lb', nameOf })).toBe([
+      `Push · ${fmtDate('2026-09-03', true, true)}`,
+      '58 min · 6,610 lb',
+      '',
+      'Barbell Bench Press',
+      '135×5',
+      '',
+      'Dumbbell Curl',
+      '77.2×10',
+    ].join('\n'))
+  })
 })
 
 // A combined session can pair the last exercise of one routine with the first of the next. The
