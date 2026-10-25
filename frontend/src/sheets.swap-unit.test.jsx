@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Swapping a running exercise for one pinned to another unit (issue #6): profile lb,
+// Swapping a running exercise for one pinned to another unit (upstream #657): profile lb,
 // dumbbell incline press pinned to kg, last logged at 77.1618 lb × 10. A freestyle swap
 // opens it at 35 kg with the unit stamp. Drives the real swapTo path in sheets.jsx.
 import { act } from 'react'
@@ -68,7 +68,7 @@ describe('freestyle swap onto a pinned exercise', () => {
   })
 })
 
-// Issue #34's planned-backup case: a routine slot offers Y as a planned substitute; swapping
+// Upstream #657's planned-backup case: a routine slot offers Y as a planned substitute; swapping
 // the slot to it builds through the routine (buildPlannedEntry), so Y lands already pinned.
 describe("swap to a routine slot's planned backup", () => {
   beforeEach(() => {

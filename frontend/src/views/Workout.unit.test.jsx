@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Switching one exercise's weight unit from the workout card's ⋯ menu (issue #8): profile lb,
+// Switching one exercise's weight unit from the workout card's ⋯ menu (upstream #657): profile lb,
 // bench pinned to kg — the card header, its rows, its step, its bar line and its history read in
 // kg while every other exercise stays in lb. Unpinning puts the card back on lb.
 import React, { act } from 'react'

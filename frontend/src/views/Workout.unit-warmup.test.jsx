@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// "Add warm-up set" mid-workout for an exercise pinned to another unit (issue #20): the ramp
+// "Add warm-up set" mid-workout for an exercise pinned to another unit (upstream #657): the ramp
 // uses the exercise's own increment and its own bar floor, so a kg bench ramps in kg and never
 // lands on the 45 lb bar the profile would use.
 import React, { act } from 'react'
@@ -23,7 +23,7 @@ const PULLUP = '0017'  // assisted pull-up — 5 kg / 10 lb increment, an assist
 let root, container, sheetRoot, sheetContainer
 
 // lb profile. `pinKg` goes through the switch (lib/exercise-unit.js), the only thing that ever
-// writes a pin, and the running entry of a pinned exercise carries its unit stamp (task 05) —
+// writes a pin, and the running entry of a pinned exercise carries its unit stamp —
 // so a pinned fixture is a state the app can actually hold.
 function mount({ pinKg = false, workW = 60, ex = BENCH } = {}) {
   const S = clone(DEF)
@@ -101,7 +101,7 @@ describe('add a warm-up set to a pinned exercise', () => {
     expect(warmupWeights()).toEqual([65])
   })
 
-  // Fork issue #39's own addition — upstream #657's assisted machine in the pin unit: an
+  // Upstream #657's assisted machine in the pin unit: an
   // assistance pull-up pinned to kg on an lb profile gives MORE help first, on the kg grid,
   // not a warm-up stepped down on the profile's 10 lb ramp.
   it('an assistance machine pinned to kg ramps its help up in kg', () => {

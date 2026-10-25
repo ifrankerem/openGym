@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-/* The store action that pins one exercise to the other unit (issue #8): it hands the state to
+/* The store action that pins one exercise to the other unit (upstream #657): it hands the state to
  * lib/exercise-unit.js and keeps what comes back, so pinning during a workout converts the
  * stored history and the running entry at once. Calling it with the unit already in force must
  * leave the very same state object alone — a replace there would drop an Undo and a draft. */
