@@ -57,6 +57,7 @@ import { finishCompare, finishCardio } from './lib/finish-compare.js'
 import { workoutFit, fitFileName } from './lib/fit-export.js'
 import { joinSessionNoProg } from './lib/session-noprog.js'
 import { buildCombinedEntries, deriveSessionName } from './lib/session-merge.js'
+import { activeToProfileUnit } from './lib/exercise-unit.js'
 import { workoutsOn, backfillStart, backfillEnd, completeBackfill, historyAsOf, sessionHistory } from './lib/backfill.js'
 import { moveWorkout, sameWorkout, startTimeOf, durationMinOf, setWorkoutDuration, rebuildPrHistory, MAX_DURATION_MIN, endsInFuture } from './lib/workout-date.js'
 import { editCompletedSession, editLeftEmpty, editedRecord, editChangesNothing } from './lib/session-edit.js'
@@ -3541,7 +3542,9 @@ export function finishWorkoutSheet({ onDiscard } = {}) {
 export const finishWorkoutNow = () => doFinishWorkout()
 function doFinishWorkout() {
   const st = S()
-  const A = st.active
+  // A pinned exercise's rows are logged in its own unit (issue #6); everything past this point
+  // works on the session as it is stored, in the profile unit (lib/exercise-unit.js).
+  const A = activeToProfileUnit(st.active, st.unit || 'kg')
   if (!A) return
   const past = !!A.backfill
   const prs = []
