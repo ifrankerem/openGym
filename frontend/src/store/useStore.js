@@ -12,6 +12,7 @@ import { refillIfComplete } from '../lib/rotation.js'
 import { liftLegacy } from '../lib/sync-legacy.js'
 import { mergeStates, localExtras, stampChange, highestStamp, stampRestore, stampReplace, inUnitOf, keepReset, resetIdsOf, mergeResetIds, entryKey } from '../lib/sync-merge.js'
 import { convertStateUnit } from '../lib/units.js'
+import { setExerciseUnit as setUnitOfExercise } from '../lib/exercise-unit.js'
 import { pendingRefCount, settleMedia, loadPending } from '../lib/media-owed.js'
 import { referencedHashes } from '../lib/media-refs.js'
 import { mediaStore, mediaStoreInUse } from '../lib/media-store.js'
@@ -157,6 +158,10 @@ export const DEF = {
   // lib/bar.js). Personal equipment, so it syncs with the account but never travels in a
   // shared plan. Logged weights stay the total — this only feeds the plate math.
   barWeights: {},
+  // Which weight unit one exercise is worked in, per id: { [exId]: { unit: 'kg' | 'lb' | null,
+  // _ts } } (lib/exercise-unit.js). null means "follows the profile" and is kept as a tombstone so
+  // a sync can tell a cleared pin from an exercise never pinned.
+  exUnit: {},
   // Your bars, per unit: { kg: { 'olympic barbell': 15, … }, lb: { … } } (lib/bar.js
   // ownBarDefault). What every exercise of that bar type without its own barWeights entry
   // starts from. Not in DEF on purpose: absent means the built-in bars, and a plain setting
@@ -1391,6 +1396,17 @@ export const useStore = create((set, get) => {
       S.unitSet = { at: Math.max(Date.now(), highestStamp(S0) + 1), convert }
       persist(S, true)
       return convert && get().ready ? get().pushState() : null
+    },
+    // Pin one exercise to kg or lb (lib/exercise-unit.js): its stored weights move onto that
+    // unit's plate grid and its running entry with them. A no-op — the unit it already uses,
+    // a cardio exercise — hands back the same state, which must not replace the one in force:
+    // that would drop an Undo and a half-written draft.
+    setExerciseUnit(exId, unit) {
+      const S0 = get().S
+      const S = setUnitOfExercise(S0, exId, unit)
+      if (S === S0) return null
+      persist(S, true)
+      return get().ready ? get().pushState() : null
     },
     // Settings → Reset everything: a new profile (restartedState), stamped with when (`resetAt`).
     // Pushed as a replace, and the stamp is what makes it hold: a device that has not seen the
