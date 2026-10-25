@@ -28,6 +28,7 @@ import { buildCombinedEntries, deriveSessionName } from './session-merge.js'
 import { todayISO } from './format.js'
 import { sanitizeHr } from './heart-rate.js'
 import { readWatchPrefs, settingsForWatch, writeWatchStatus, onWatchPrefs } from './watch-settings.js'
+import { entryToProfileUnit, convertExact, UNIT_PLACES_SHOWN } from './exercise-unit.js'
 
 export const SNAPSHOT_VERSION = 1
 const APPLIED_KEY = 'gym_watch_applied'
@@ -150,7 +151,10 @@ export function buildSnapshot(S, { timer = null, ready = null } = {}) {
       restSec: num(S.restSec) || 0,
       // a rest running on the phone, so the watch counts down the same one
       rest: timer && !timer.paused && !timer.ready && num(timer.endsAt) ? { endsAt: timer.endsAt } : null,
-      entries: A.entries.map(e => watchEntry(e, H, S)),
+      // A pinned exercise's entry is in its own unit (upstream #657); the watch works in the
+      // profile's, so the phone converts at the edge — exactly, and an unpinned entry is the same
+      // object it always was.
+      entries: A.entries.map(e => watchEntry(entryToProfileUnit(e, S.unit || 'kg'), H, S)),
     },
   }
 }
@@ -248,7 +252,13 @@ export function applyEvents (events, getState) {
       }
       const idx = entryIndexOf(A, ev)
       const set = idx >= 0 ? A.entries[idx].sets?.[ev.setIdx] : null
-      if (set) handlers.setDone(idx, ev.setIdx, { w: num(ev.w), r: num(ev.r), at: num(ev.at), hr: sanitizeHr(ev.hr), ...extraOf(ev) })
+      // The tick comes back in the profile's unit; a pinned entry holds its own (upstream #657).
+      // shortcut: the watch shows a pinned exercise in the profile unit; show its own unit once the watch app reads a per-entry unit.
+      const entryUnit = idx >= 0 ? A.entries[idx].unit : null
+      const w = entryUnit && entryUnit !== (S.unit || 'kg') && num(ev.w) != null
+        ? convertExact(num(ev.w), S.unit || 'kg', entryUnit, UNIT_PLACES_SHOWN)
+        : num(ev.w)
+      if (set) handlers.setDone(idx, ev.setIdx, { w, r: num(ev.r), at: num(ev.at), hr: sanitizeHr(ev.hr), ...extraOf(ev) })
     } else if (ev.type === 'weighIn') {
       // The weigh-in the watch asks for before a workout it starts: a body weight entry on its
       // day, as the phone's own check-in makes one (today's replaces today's).
