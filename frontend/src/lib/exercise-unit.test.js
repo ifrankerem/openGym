@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   UNIT_PLACES_STORED, UNIT_PLACES_SHOWN, convertExact, unitPinOf, exerciseUnit,
-  canPinUnit, exerciseView, entryToProfileUnit, setExerciseUnit,
+  canPinUnit, exerciseView, entryToProfileUnit, setExerciseUnit, activeToProfileUnit,
 } from './exercise-unit.js'
 import { EXDB } from './exercises.js'
 import { convertStateUnit } from './units.js'
@@ -294,5 +294,24 @@ describe('the profile switch erases a redundant pin', () => {
     const converted = convertStateUnit(S, 'kg')
     expect(converted.exUnit[X]).toEqual({ unit: 'kg', _ts: 42 })
     expect(exerciseView(converted, X)).toBe(converted)
+  })
+})
+
+describe('activeToProfileUnit', () => {
+  it('converts stamped entries back and shares the rest', () => {
+    const stamped = { id: X, unit: 'kg', sets: [{ w: 35, r: 8, done: true }], target: { weight: 35, inc: 2.5 }, topW: 35 }
+    const plain = { id: Y, sets: [{ w: 100, r: 5, done: true }] }
+    const active = { id: 'a1', entries: [stamped, plain] }
+    const out = activeToProfileUnit(active, 'lb')
+    expect(out).not.toBe(active)
+    expect(out.entries[0]).toEqual({
+      id: X, sets: [{ w: 77.1618, r: 8, done: true }], target: { weight: 77.1618, inc: 5.5116 }, topW: 77.1618,
+    })
+    expect(out.entries[1]).toBe(plain)
+  })
+
+  it('returns the session itself when no entry carries unit', () => {
+    const active = { id: 'a1', entries: [{ id: Y, sets: [{ w: 100, r: 5, done: true }] }] }
+    expect(activeToProfileUnit(active, 'lb')).toBe(active)
   })
 })
