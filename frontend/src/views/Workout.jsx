@@ -48,7 +48,8 @@ import { nextOpenSet, workoutKeyAction } from '../lib/workout-keys.js'
 import { MUSCLE_NAME } from '../lib/muscles.js'
 import FocusView from './FocusView.jsx'
 import { withMeaning, historyAs, dbLoadFor, entryDbLoad, bellsIn, ownedWeightsFor, stepOwned } from '../lib/dumbbells.js'
-import { sessionEntryInUnit } from '../lib/exercise-unit.js'
+import { sessionEntryInUnit, exerciseUnit, canPinUnit } from '../lib/exercise-unit.js'
+import { useExerciseView } from '../store/useExerciseView.js'
 
 // How long after a key starts a hold the same key is not yet its "Done" (#133). A USB button
 // that bounces, or a double press, sends two presses a moment apart: the first starts the hold,
@@ -107,8 +108,12 @@ const RTL_LETTER = /[֐-ࣿיִ-﷿ﹰ-﻿]/
 const SWITCH_SIDES_SEC = 10
 
 function ExerciseBlock({ entryIdx, compact, dense, editing, onToggle, onToggleSide, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onCopySetAt, onStartTimed, onPairPrev, onPairNext, onSetRowRef, onProgressionSettings, onRest, onNoProg, routineUpdate, onSwap, onMoveUp, onMoveDown, canMoveUp, canMoveDown, onRemoveExercise, busy }) {
-  const S = useStore(s => s.S)
+  const realS = useStore(s => s.S)
   const update = useStore(s => s.update)
+  // A pinned exercise is read, stepped and shown in its own unit (lib/exercise-unit.js); the
+  // writes below go through update on the real state, where the entry already lives in it.
+  const S = useExerciseView(realS.active?.entries?.[entryIdx]?.id)
+  const setUnit = useStore(s => s.setExerciseUnit)
   const working = useUI(s => s.work)
   const restEnds = useUI(s => s.timer?.endsAt)
   const swipeHint = useUI(s => (s.swipeHint?.idx === entryIdx ? s.swipeHint : null))
@@ -397,6 +402,19 @@ function ExerciseBlock({ entryIdx, compact, dense, editing, onToggle, onToggleSi
   // The exercise's own rest, or the default it falls back to (lib/supersetFlow.js restSecFor).
   const ownRest = entry.target?.restSec > 0 ? entry.target.restSec : 0
   const restSub = ownRest ? fmtRest(ownRest) : t('Default ({0})', fmtRest(S.restSec))
+  // The unit this exercise is worked in, for every routine (#657). Choosing one converts its
+  // stored history onto that unit's grid; choosing the profile's own unpins it. "Same as your
+  // profile" is read off the real state: `S` is the exercise's view, in the exercise's unit.
+  const openUnitMenu = () => menuSheet({
+    title: t('Weight unit'),
+    subtitle: t('For this exercise, in every routine. Its history is converted.'),
+    items: ['kg', 'lb'].map(u => ({
+      label: u,
+      sub: u === (realS.unit || 'kg') ? t('Same as your profile') : undefined,
+      on: exerciseUnit(S, entry.id) === u,
+      onClick: () => setUnit(entry.id, u),
+    })),
+  })
   const openMore = () => menuSheet({
     title: exerciseNameFor(ex),
     titleClass: exerciseNameClass(ex),
@@ -413,6 +431,9 @@ function ExerciseBlock({ entryIdx, compact, dense, editing, onToggle, onToggleSi
       ] },
       { title: t('Settings'), items: [
         onProgressionSettings && { icon: 'slider', label: t('Exercise settings'), sub: guidance ? t(guidance.policyLabel) : t('Sets, reps, rest, progression'), onClick: onProgressionSettings },
+        canPinUnit({ ...(entry.target || {}), id: entry.id }) && {
+          icon: 'scale', label: t('Weight unit'), sub: exerciseUnit(S, entry.id), onClick: openUnitMenu,
+        },
         onRest && { icon: 'timer', label: t('Rest timer'), sub: restSub, onClick: onRest },
         plateLoading && { icon: 'plate', label: t('Plate loading'), sub: loadSummary, onClick: () => barWeightSheet(entry.id, cfg) },
         routineUpdate && { icon: 'clipboard', label: t('Update routine'), sub: routineUpdate.sub, onClick: routineUpdate.run },
@@ -667,7 +688,7 @@ function ExerciseBlock({ entryIdx, compact, dense, editing, onToggle, onToggleSi
       {!cardio && isPerSide(cfg) && <span className="tag acc nocap"><Icon name="sides" />{t('Per side')}</span>}
       {(ex.tg || ex.bp) && <span className="tag">{t(MUSCLE_NAME[ex.tg] || ex.tg || ex.bp)}</span>}
       {ex.eq && <span className="tag">{t(ex.eq)}</span>}
-      {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(best)} {S.unit}</span>}
+      {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(best, 2)} {S.unit}</span>}
     </div>
     {/* Three notes can apply to one exercise and they are not interchangeable, so each keeps its
         own line and its own icon: the plan's instruction (cfg.note, from the routine), the
@@ -712,7 +733,7 @@ function ExerciseBlock({ entryIdx, compact, dense, editing, onToggle, onToggleSi
           {!warm && s.max && <div className="setph">{t('Max: as many reps as you can')}{(() => {
             const rec = maxRecordAt(H.workouts, entry.id, s.w)
             if (!rec) return null
-            return ' · ' + (rec.w > 0 ? tn('Record: {0} rep at {1}', 'Record: {0} reps at {1}', rec.r, fmtNum(rec.w) + ' ' + S.unit) : tn('Record: {0} rep', 'Record: {0} reps', rec.r))
+            return ' · ' + (rec.w > 0 ? tn('Record: {0} rep at {1}', 'Record: {0} reps at {1}', rec.r, fmtNum(rec.w, 2) + ' ' + S.unit) : tn('Record: {0} rep', 'Record: {0} reps', rec.r))
           })()}</div>}
           {!pairTail && swipeRow(s, i, perSide && isSideSet(s) ? (
             // Unilateral set: the number sits beside a two-row L/R stack, each side logged and

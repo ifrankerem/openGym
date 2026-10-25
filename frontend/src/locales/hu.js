@@ -2417,4 +2417,6 @@ export default {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': 'Ezen az eszközön 1 edzés van, amely nincs ebben a mentésben. A csere törli.',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': 'Ezen az eszközön {0} edzés van, amely nincs ebben a mentésben. A csere törli őket.',
+  'For this exercise, in every routine. Its history is converted.': 'Ehhez a gyakorlathoz, minden rutinban. Az előzményei átváltásra kerülnek.',
+  'Same as your profile': 'Ugyanaz, mint a profilod',
 }

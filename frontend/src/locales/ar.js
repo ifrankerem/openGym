@@ -2469,4 +2469,6 @@ export default {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': 'على هذا الجهاز تمرين واحد ليس في هذه النسخة الاحتياطية. الاستبدال يحذفه.',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': 'على هذا الجهاز {0} تمارين ليست في هذه النسخة الاحتياطية. الاستبدال يحذفها.',
+  'For this exercise, in every routine. Its history is converted.': 'لهذا التمرين، في كل الروتينات. سجلّه محوَّل.',
+  'Same as your profile': 'مثل ملفك الشخصي',
 }

@@ -2414,4 +2414,6 @@ export default {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': '이 기기에 이 백업에 없는 운동이 1개 있습니다. 바꾸면 삭제됩니다.',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': '이 기기에 이 백업에 없는 운동이 {0}개 있습니다. 바꾸면 삭제됩니다.',
+  'For this exercise, in every routine. Its history is converted.': '이 운동에 대해, 모든 루틴에 적용됩니다. 기록은 변환됩니다.',
+  'Same as your profile': '프로필과 동일',
 }

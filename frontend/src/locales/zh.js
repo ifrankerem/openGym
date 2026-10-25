@@ -2414,4 +2414,6 @@ export default {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': '此设备上有 1 次训练不在此备份中。替换会删除它。',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': '此设备上有 {0} 次训练不在此备份中。替换会删除它们。',
+  'For this exercise, in every routine. Its history is converted.': '仅针对这个动作，所有训练计划皆适用。历史记录会换算。',
+  'Same as your profile': '与你的档案相同',
 }
