@@ -12,25 +12,12 @@
 // around it; units.js already imports history.js, so this adds no cycle.
 import { isSideSet, syncSideAggregate } from './workout-model.js'
 import { modeOf, workoutVolume } from './history.js'
-import { convertWeight, convertBodyWeight } from './units.js'
+import { convertWeight, convertBodyWeight, convertExact, UNIT_PLACES_STORED, UNIT_PLACES_SHOWN } from './units.js'
 
-const LB_PER_KG = 2.2046226218
-
-/** Decimals a stored weight keeps (so it comes back unchanged) and a shown one prints to. */
-export const UNIT_PLACES_STORED = 4
-export const UNIT_PLACES_SHOWN = 3
-
-/**
- * Convert a weight with the profile's factor and nothing else — no plate rounding, so a value
- * stored through `exerciseView` reads back as the same number. Anything that is not a finite
- * number, and any value in the unit it is already in, comes back untouched.
- */
-export function convertExact(value, from, to, places = UNIT_PLACES_STORED) {
-  if (from === to || value == null || value === '' || !Number.isFinite(Number(value))) return value
-  const v = Number(value) * (to === 'lb' ? LB_PER_KG : 1 / LB_PER_KG)
-  const f = 10 ** places
-  return Math.round(v * f) / f
-}
+// The exact conversion and its decimal places live in units.js, next to the factor it uses and
+// the grid rounding it sits beside: the profile switch itself needs them, and importing them back
+// from here would be a cycle (this module already imports that one).
+export { convertExact, UNIT_PLACES_STORED, UNIT_PLACES_SHOWN }
 
 // The rounding `convertWeight` applies on the way into a unit: lb to the nearest 0.5, kg to the
 // nearest 0.25. Spelled out because convertWeight returns a value untouched when both units are
