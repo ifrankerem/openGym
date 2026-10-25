@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mergeStates } from './sync-merge.js'
 
-// A per-exercise unit pin is one stamped choice per exercise (issue #5): the pin with the
+// A per-exercise unit pin is one stamped choice per exercise (upstream #657): the pin with the
 // later _ts wins, a cleared pin (the null tombstone) included, either way round.
 const base = (over = {}) => ({
   unit: 'kg', restSec: 90, lang: 'en', week: { 1: ['r1'] }, dayPlan: {},

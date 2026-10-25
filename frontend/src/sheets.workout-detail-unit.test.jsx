@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// A saved workout's detail sheet with one exercise pinned to another unit (issue #10): the
+// A saved workout's detail sheet with one exercise pinned to another unit (upstream #657): the
 // pinned dumbbell press reads in kg, the bench beside it stays in lb, and the session's own
 // total volume stays in the profile unit.
 import React, { act } from 'react'

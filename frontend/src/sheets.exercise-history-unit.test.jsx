@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // The exercise's own history sheet and its 1RM estimate, for an exercise pinned to another
-// unit (issue #10): the sessions, the best and the estimate read in kg. An unpinned exercise
+// unit (upstream #657): the sessions, the best and the estimate read in kg. An unpinned exercise
 // reads exactly as before.
 import React, { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

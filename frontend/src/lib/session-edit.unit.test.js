@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { editCompletedSession, saveWorkoutEdit, editChangesNothing } from './session-edit.js'
 import { buildCompletedWorkout } from './finish-workout.js'
 
-// Editing a saved workout with a per-exercise unit pin (issue #6): profile lb, dumbbell
+// Editing a saved workout with a per-exercise unit pin (upstream #657): profile lb, dumbbell
 // incline press pinned to kg. The stored record is shaped the way a finish wrote it; the
 // editor opens it at 35 kg; saving converts back, so an untouched draft leaves the record
 // byte-for-byte as it was.

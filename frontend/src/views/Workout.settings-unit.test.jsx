@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// "Exercise settings" mid-workout on an exercise pinned to another unit (issue #9): the sheet
+// "Exercise settings" mid-workout on an exercise pinned to another unit (upstream #657): the sheet
 // edits in the exercise's unit, and saving rebuilds the rows in it at the plan's own weight.
 // The routine slot is not written by this path, as it never was.
 import React, { act } from 'react'
@@ -38,8 +38,8 @@ function mount() {
     id: 'settings-unit', d: '2026-10-03', start: Date.now(), routineIds: ['r1'], name: 'Push', bw: null, cur: 0,
     entries: [{
       id: BENCH, rid: 'r1',
-      // A running entry of a pinned exercise holds its weights in the pin unit and says so
-      // (task 05). Without the stamp the switch reads 35 as 35 lb and makes it 16 kg.
+      // A running entry of a pinned exercise holds its weights in the pin unit and says so.
+      // Without the stamp the switch reads 35 as 35 lb and makes it 16 kg.
       unit: 'kg',
       target: { id: BENCH, sets: 3, reps: 8, weight: 35, inc: 2.5, mode: 'reps' },
       planned: { sets: 3, reps: 8, weight: 35 },

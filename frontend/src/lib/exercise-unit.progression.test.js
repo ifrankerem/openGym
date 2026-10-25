@@ -7,7 +7,7 @@ import { buildCompletedWorkout } from './finish-workout.js'
 import { bestWeightForEntry } from './history.js'
 import { beatsWeight } from './exercises.js'
 
-// Issue #33: a pinned exercise steps in its own unit, session after session, with no drift.
+// Upstream #657: a pinned exercise steps in its own unit, session after session, with no drift.
 // Machines step 10, 15 or 25 lb while free weights step 2.5 kg, and one profile holds both.
 // Every case walks the real path: build → log every work set → finish (activeToProfileUnit +
 // buildCompletedWorkout + the exWeights advance doFinishWorkout makes) → build the next one.

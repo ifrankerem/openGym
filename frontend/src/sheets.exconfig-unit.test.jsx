@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// The exercise settings sheet for a per-exercise unit (issue #9): it opens the weights in the
+// The exercise settings sheet for a per-exercise unit (upstream #657): it opens the weights in the
 // exercise's own unit, and its "Weight unit" control pins the exercise and moves the open draft
 // onto the new unit's grid. An unpinned exercise's saved config is exactly what it always was.
 import React, { act } from 'react'

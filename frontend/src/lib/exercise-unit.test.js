@@ -7,7 +7,7 @@ import {
 import { EXDB } from './exercises.js'
 import { convertStateUnit } from './units.js'
 
-// The pure core of a per-exercise weight unit (issue #5): which unit an exercise uses, a
+// The pure core of a per-exercise weight unit (upstream #657): which unit an exercise uses, a
 // read-only view of the state in that unit, the conversions at its edges, and the switch.
 const X = '0025'   // barbell bench press
 const Y = '0043'   // barbell squat
@@ -258,7 +258,7 @@ describe('entryToProfileUnit', () => {
   })
 })
 
-// Legacy data (issue #31): a stored number predates the pin and is always in the profile unit.
+// Legacy data (upstream #657): a stored number predates the pin and is always in the profile unit.
 // The pin converts and snaps it onto the pin's grid; it never reinterprets it.
 describe('legacy reads without a unit field', () => {
   const stored = () => ({
@@ -288,7 +288,7 @@ describe('legacy reads without a unit field', () => {
   })
 })
 
-// Issue #31: once the profile reaches the pin, the pin is redundant and the view is the state.
+// Upstream #657: once the profile reaches the pin, the pin is redundant and the view is the state.
 describe('the profile switch erases a redundant pin', () => {
   it('lb profile, X pinned kg, converted to kg: exerciseView returns the state itself', () => {
     const S = setExerciseUnit({ ...lbState(), exUnit: {} }, X, 'kg', 42)
