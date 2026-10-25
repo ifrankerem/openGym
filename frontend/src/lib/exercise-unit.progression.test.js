@@ -108,12 +108,14 @@ describe('a pinned exercise steps in its own unit, no drift over sessions', () =
     expect(plans[DB].flat()).toEqual([22.5, 22.5, 22.5, 25, 25, 25, 27.5, 27.5, 27.5])
   })
 
-  it('after the pin is gone the next planned weight is the kg-grid snap of 150 lb (case 5)', () => {
+  // Case 5: the last logged session was 150 lb, which snaps to 68 kg on the kg grid; linear
+  // progression then adds the leg press's kg step (no plan inc, so the kg default, 5 kg).
+  it('after the pin is gone the next planned weight is the snap plus the kg step (case 5)', () => {
     const { S } = stepPlans(legDay(), 5)
     const unpinned = setExerciseUnit(S, LP, 'kg', 99)
     const [sixth] = buildCombinedEntries(unpinned, ['r1']).entries
     expect(sixth.unit).toBeUndefined()
-    expect(sixth.sets.map(s => s.w)).toEqual([68, 68, 68])
+    expect(sixth.sets.map(s => s.w)).toEqual([73, 73, 73])
     // the history stays readable in kg: without a pin the view is the state itself
     expect(exerciseView(unpinned, LP)).toBe(unpinned)
   })
