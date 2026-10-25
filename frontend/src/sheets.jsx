@@ -57,7 +57,8 @@ import { finishCompare, finishCardio } from './lib/finish-compare.js'
 import { workoutFit, fitFileName } from './lib/fit-export.js'
 import { joinSessionNoProg } from './lib/session-noprog.js'
 import { buildCombinedEntries, deriveSessionName } from './lib/session-merge.js'
-import { activeToProfileUnit, sessionEntryInUnit, convertExact, UNIT_PLACES_STORED } from './lib/exercise-unit.js'
+import { activeToProfileUnit, sessionEntryInUnit, convertExact, exerciseUnit, canPinUnit, cfgInUnit, UNIT_PLACES_STORED, UNIT_PLACES_SHOWN } from './lib/exercise-unit.js'
+import { convertWeight } from './lib/units.js'
 import { useExerciseView } from './store/useExerciseView.js'
 import { workoutsOn, backfillStart, backfillEnd, completeBackfill, historyAsOf, sessionHistory } from './lib/backfill.js'
 import { moveWorkout, sameWorkout, startTimeOf, durationMinOf, setWorkoutDuration, rebuildPrHistory, MAX_DURATION_MIN, endsInFuture } from './lib/workout-date.js'
@@ -1756,16 +1757,35 @@ function BackupsSheet({ ex, subs: initial, onChange, close }) {
   </>
 }
 
-function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, initial, saveLabel, backupsEditable }) {
+function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, initial, saveLabel, backupsEditable, cfgUnit }) {
   const st = useStore(s => s.S)
+  // The unit the numbers handed in are in, and the unit the saved config comes back in: the
+  // profile's, unless the caller is an entry that says otherwise (a running session's own).
+  const inUnit = cfgUnit || st.unit || 'kg'
+  // The unit this exercise is worked in (upstream #657, lib/exercise-unit.js): its numbers are
+  // read, stepped and saved in it, and the saved ones converted back into `inUnit` exactly.
+  const unit = exerciseUnit(st, ex.id)
+  const setUnit = useStore(s => s.setExerciseUnit)
+  // The open draft follows a unit switch: every weight it holds moves onto the new unit's plate
+  // grid, so what is on screen is what will be loaded there.
+  const moveDraft = (cfg, from, to) => {
+    const w = v => convertWeight(v, from, to)
+    const out = { ...cfg }
+    if (out.weight != null) out.weight = w(out.weight)
+    if (out.inc > 0 && (out.mode == null || out.mode === 'reps')) out.inc = w(out.inc)
+    if (Array.isArray(out.warmup)) out.warmup = out.warmup.map(x => (x && x.weight != null ? { ...x, weight: w(x.weight) } : x))
+    if (Array.isArray(out.pyramidWeight)) out.pyramidWeight = out.pyramidWeight.map(x => (x > 0 ? w(x) : x))
+    return out
+  }
   // No warm-up rest of its own: the profile's (Settings > Workout) when it has one, else the work rest.
   const warmAll = typeof st.warmupRestSec === 'number' ? st.warmupRestSec : null
   const warmLikeAll = warmAll === null ? t('Like the work sets') : t('Default ({0})', warmAll > 0 ? fmtRest(warmAll) : t('No timer'))
   const cardio = isCardio(ex.id)
   const speedUnit = speedUnitOf(st)
   const seed = existing || initial || defaultConfig(ex.id)
+  const seedIn = unit === inUnit ? seed : cfgInUnit(seed, inUnit, unit, UNIT_PLACES_SHOWN)
   const [c, setC] = useState(() => {
-    const cfg = { ...seed }
+    const cfg = { ...seedIn }
     // A session's target carries the meaning of its dumbbell weight as a stamp (lib/dumbbells.js);
     // one that only repeats the exercise's own default is not the slot's choice, so it is not kept.
     if (cfg.dbLoad != null && dbLoadOf(cfg.dbLoad) === dbLoadFor(st, ex.id)) delete cfg.dbLoad
@@ -1783,7 +1803,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
   const pyramid = mode === 'reps' && isPyramid({ ...c, mode })
   const setPyramidAt = (i, v) => setC(x => ({ ...x, pyramid: x.pyramid.map((p, j) => (j === i ? v : p)) }))
   const progressionPolicy =policyFor({ ...c, id: ex.id }, routine, mode)
-  const progressionStepInvalid = !progressionStepIsValid(progressionStepOf(c, mode, ex, st.unit), progressionPolicy, c.backoff === true && backoffOffered(c, mode, ex, bw), weightlessOf(c, mode, bw))
+  const progressionStepInvalid = !progressionStepIsValid(progressionStepOf(c, mode, ex, unit), progressionPolicy, c.backoff === true && backoffOffered(c, mode, ex, bw), weightlessOf(c, mode, bw))
   const activePolicy = policyFor({ ...c, id: ex.id }, routine, mode)
   // Both climb a range: the flat Reps stepper gives way to "Reps from" / "Reps up to".
   const ranged = mode === 'reps' && climbsRange(activePolicy)
@@ -1848,8 +1868,12 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
       ...(c.warmupRestOff === true ? { warmupRestOff: true } : c.warmupRestSec > 0 ? { warmupRestSec: Math.round(c.warmupRestSec) } : {}),
       ...(perSide && c.sideRestSec > 0 ? { sideRestSec: Math.round(c.sideRestSec) } : {}),
     }
-    if (cardio) onSave({ sets, min: Math.max(1, Math.round(c.min) || 20), speed: Math.max(0, c.speed || 8), ...withNote, ...withRest, ...withSubs })
-    else if (mode === 'time') onSave({ sets, mode: 'time', sec: Math.max(1, Math.round(c.sec) || 45), weight: Math.max(0, c.weight || 0), ...flags, ...(perSide ? { side: true } : {}), ...prog, ...withNote, ...withWarmups, ...withRest, ...withSetRests, ...withMeant, ...withFailure, ...withSubs })
+    // Everything the sheet shows is in the exercise's unit; the caller gets its own unit back,
+    // converted exactly, so a config saved without an edit is the same number it opened with.
+    const emit = cfg => onSave(unit === inUnit ? cfg : cfgInUnit(cfg, unit, inUnit, UNIT_PLACES_STORED))
+
+    if (cardio) emit({ sets, min: Math.max(1, Math.round(c.min) || 20), speed: Math.max(0, c.speed || 8), ...withNote, ...withRest, ...withSubs })
+    else if (mode === 'time') emit({ sets, mode: 'time', sec: Math.max(1, Math.round(c.sec) || 45), weight: Math.max(0, c.weight || 0), ...flags, ...(perSide ? { side: true } : {}), ...prog, ...withNote, ...withWarmups, ...withRest, ...withSetRests, ...withMeant, ...withFailure, ...withSubs })
     else {
       // A unilateral target is stored even: the split has to divide, and a typed 15 would
       // otherwise plan seven reps on one side and eight on the other, every session.
@@ -1883,7 +1907,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
       if (c.backoff === true && backoffOffered(out, 'reps', ex, bw) && isBackoff({ ...out, backoff: true })) out.backoff = true
       // A pyramid has its own Max set for this, so the flag is not offered (or kept) there.
       if (!list.length) Object.assign(out, withFailure)
-      onSave(out)
+      emit(out)
     }
   }
   return <>
@@ -1905,6 +1929,14 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
       <Segmented className="seg-range" value={mode} onChange={setMode}
         options={[{ value: 'reps', label: t('Reps') }, { value: 'time', label: t('Time') }]} />
     </div>}
+    {/* Which unit this exercise is worked in, for every routine (upstream #657). Switching it pins
+        the exercise, and the open draft's own weights move onto the new unit's plate grid. */}
+    {canPinUnit({ id: ex.id, mode }) && <div className="row cfgrow" style={{ marginBottom: 12 }}>
+      <div className="stp-l" style={{ minWidth: 96 }}>{t('Weight unit')}</div>
+      <Segmented className="seg-inline" value={unit}
+        onChange={u => { if (u === unit) return; setC(x => moveDraft(x, unit, u)); setUnit(ex.id, u) }}
+        options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} />
+    </div>}
     <div className="row cfgrow" style={{ marginBottom: mode === 'time' ? 8 : 18 }}>
       {cardio ? <>
         <Stepper label={t('Intervals')} value={c.sets} step={1} decimal={false} onChange={v => setC(x => ({ ...x, sets: v }))} />
@@ -1917,7 +1949,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
         <Stepper label={t('Seconds')} value={c.sec} step={5} decimal={false} onChange={v => setC(x => ({ ...x, sec: v }))} />
         {/* A bodyweight hold's load is the "Added" row below — showing both put two fields on
             one value. */}
-        {!bw && <Stepper label={t('Weight ({0})', st.unit)} value={c.weight} step={2.5} onChange={v => setC(x => ({ ...x, weight: v }))} />}
+        {!bw && <Stepper label={t('Weight ({0})', unit)} value={c.weight} step={2.5} onChange={v => setC(x => ({ ...x, weight: v }))} />}
       </> : <>
         {/* Rest-pause always trains as exactly two rows — a warm-up at this rep count, then one
             rest-pause work set — so "Sets" has nothing left to mean and only invites a mismatch. */}
@@ -1926,7 +1958,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
         {!ranged && !pyramid && <Stepper label={t('Reps')} value={c.reps} step={perSide ? 2 : 1} decimal={false} onChange={v => setC(x => ({ ...x, reps: v }))} />}
         {/* On bodyweight work the weight stepper is the click #32 is about, so it is not here
             until there is a belt to describe — see the added-weight row below. */}
-        {!bw && !pyramid && <Stepper label={t('Weight ({0})', st.unit)} value={c.weight} step={2.5} onChange={v => setC(x => ({ ...x, weight: v }))} />}
+        {!bw && !pyramid && <Stepper label={t('Weight ({0})', unit)} value={c.weight} step={2.5} onChange={v => setC(x => ({ ...x, weight: v }))} />}
       </>}
     </div>
     {/* Pyramid sets: a row per set, each with its own reps or Max, rest and weight. A set left
@@ -1952,7 +1984,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
         </div>
         {/* Bodyweight work has its one "Added" load below instead. */}
         {!bw && <div className="row cfgrow" style={{ marginBottom: 4 }}>
-          <Stepper label={t('Weight ({0})', st.unit)} value={(c.pyramidWeight || [])[i] || 0} step={2.5}
+          <Stepper label={t('Weight ({0})', unit)} value={(c.pyramidWeight || [])[i] || 0} step={2.5}
             onChange={v => setC(x => {
               const weight = Array.from({ length: x.pyramid.length }, (_, j) => (x.pyramidWeight || [])[j] || 0)
               weight[i] = v
@@ -2110,7 +2142,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
         reps, with its explanation underneath. */}
     {bw && <>
       <div className="row cfgrow" style={{ marginBottom: 8 }}>
-        <Stepper label={t('Added ({0})', st.unit)} value={c.weight || 0} step={2.5}
+        <Stepper label={t('Added ({0})', unit)} value={c.weight || 0} step={2.5}
           onChange={v => setC(x => ({ ...x, weight: v }))} />
       </div>
       <div className="small dim" style={{ marginBottom: 18 }}>
@@ -2180,7 +2212,7 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
     </>}
     {pyramid
       ? <div className="small dim" style={{ marginBottom: 18 }}>{t('Weight is up to you: pyramid sets are not progressed automatically.')}</div>
-      : <ProgressionFields ex={ex} mode={mode} c={c} setC={setC} routine={routine} unit={st.unit} perSide={perSide} bw={bw} />}
+      : <ProgressionFields ex={ex} mode={mode} c={c} setC={setC} routine={routine} unit={unit} perSide={perSide} bw={bw} />}
     <textarea className="input" rows={3} maxLength={500} style={{ marginBottom: 18 }}
       placeholder={t('Note (optional): loading cues, "bar only, then +1 plate/side each set", anything worth remembering')}
       value={c.note || ''} onChange={e => setC(x => ({ ...x, note: e.target.value }))} />
@@ -2197,7 +2229,9 @@ function ExConfig({ ex, existing, onSave, onDelete, onReplace, close, routine, i
   </>
 }
 // `opts.backups`: the routine editor's sheet, where the slot's planned substitutes are picked.
-export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial, onReplace, saveLabel, opts = {}) => ui().openSheet(close => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} onReplace={onReplace} routine={routine} saveLabel={saveLabel} backupsEditable={!!opts.backups} close={close} />)
+// `opts.cfgUnit`: the unit the numbers in `existing` / `initial` are in, and the unit `onSave`
+// receives them in — the profile's unless the caller is an entry that says otherwise (upstream #657).
+export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial, onReplace, saveLabel, opts = {}) => ui().openSheet(close => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} onReplace={onReplace} routine={routine} saveLabel={saveLabel} backupsEditable={!!opts.backups} cfgUnit={opts.cfgUnit} close={close} />)
 
 /* ============================ glyph picker ============================ */
 // Grouped by what the glyph means for a training day, so picking one is a scan
