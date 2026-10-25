@@ -2414,4 +2414,6 @@ export default {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': 'इस डिवाइस पर 1 वर्कआउट है जो इस बैकअप में नहीं है। बदलने से यह मिट जाएगा।',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': 'इस डिवाइस पर {0} वर्कआउट हैं जो इस बैकअप में नहीं हैं। बदलने से ये मिट जाएँगे।',
+  'For this exercise, in every routine. Its history is converted.': 'इस व्यायाम के लिए, हर रूटीन में। इसका इतिहास बदला जाएगा।',
+  'Same as your profile': 'आपकी प्रोफ़ाइल जैसा',
 }

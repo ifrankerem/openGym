@@ -1535,6 +1535,8 @@ export const PT_BR_OVERRIDES = {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': 'Este dispositivo tem 1 treino que não está neste backup. Substituir exclui esse treino.',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': 'Este dispositivo tem {0} treinos que não estão neste backup. Substituir exclui esses treinos.',
+  'For this exercise, in every routine. Its history is converted.': 'Para este exercício, em todas as rotinas. O histórico dele é convertido.',
+  'Same as your profile': 'Igual ao seu perfil',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

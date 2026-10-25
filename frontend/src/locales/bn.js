@@ -2493,4 +2493,6 @@ export default {
   // --- import with no account: workouts on this device ---
   'This device has 1 workout that is not in this backup. Replacing deletes it.': 'এই ডিভাইসে ১টি ওয়ার্কআউট আছে যা এই ব্যাকআপে নেই। প্রতিস্থাপন করলে এটি মুছে যাবে।',
   'This device has {0} workouts that are not in this backup. Replacing deletes them.': 'এই ডিভাইসে {0}টি ওয়ার্কআউট আছে যা এই ব্যাকআপে নেই। প্রতিস্থাপন করলে এগুলো মুছে যাবে।',
+  'For this exercise, in every routine. Its history is converted.': 'এই ব্যায়ামের জন্য, সব রুটিনে। এর ইতিহাস রূপান্তর করা হবে।',
+  'Same as your profile': 'আপনার প্রোফাইলের মতো',
 }

@@ -57,7 +57,8 @@ import { finishCompare, finishCardio } from './lib/finish-compare.js'
 import { workoutFit, fitFileName } from './lib/fit-export.js'
 import { joinSessionNoProg } from './lib/session-noprog.js'
 import { buildCombinedEntries, deriveSessionName } from './lib/session-merge.js'
-import { activeToProfileUnit, sessionEntryInUnit } from './lib/exercise-unit.js'
+import { activeToProfileUnit, sessionEntryInUnit, convertExact, UNIT_PLACES_STORED } from './lib/exercise-unit.js'
+import { useExerciseView } from './store/useExerciseView.js'
 import { workoutsOn, backfillStart, backfillEnd, completeBackfill, historyAsOf, sessionHistory } from './lib/backfill.js'
 import { moveWorkout, sameWorkout, startTimeOf, durationMinOf, setWorkoutDuration, rebuildPrHistory, MAX_DURATION_MIN, endsInFuture } from './lib/workout-date.js'
 import { editCompletedSession, editLeftEmpty, editedRecord, editChangesNothing } from './lib/session-edit.js'
@@ -757,7 +758,9 @@ export const goalSheet = () => ui().openSheet(close => <GoalSheet close={close} 
 // same thing the workout screen derives it from, so what the editor shows as chosen is what
 // the rows do. Without one, the equipment alone decides.
 function BarWeightEditor({ ex, cfg, extra }) {
-  const st = useStore(s => s.S)
+  // A pinned exercise's bar is shown in its unit (lib/exercise-unit.js) and stored in the
+  // profile's, exactly, so reopening reads the same number back.
+  const st = useExerciseView(ex.id)
   const bar = usesBar(ex)
   const ctx = { ...(cfg || {}), id: ex.id }
   const kind = loadKindFor(st, ctx)
@@ -788,7 +791,8 @@ function BarWeightEditor({ ex, cfg, extra }) {
   const setBar = v => update(s => {
     s.barWeights = s.barWeights || {}
     const n = Math.max(0, Math.round((v || 0) * 100) / 100)
-    if (n > 0) s.barWeights[ex.id] = n; else delete s.barWeights[ex.id]
+    if (!n) delete s.barWeights[ex.id]
+    else s.barWeights[ex.id] = convertExact(n, st.unit || 'kg', s.unit || 'kg', UNIT_PLACES_STORED)
   })
   // A quick pick of the type's own weight takes the override off, so the exercise keeps following
   // your bars instead of freezing today's number onto it.

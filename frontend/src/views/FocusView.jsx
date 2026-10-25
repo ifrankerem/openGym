@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore.js'
+import { useExerciseView } from '../store/useExerciseView.js'
 import { exOr } from '../lib/exercises.js'
 import { clampIncline, hasIncline, inclineFits, INCLINE_MAX, INCLINE_STEP } from '../lib/incline.js'
 import { exerciseNameFor, t } from '../lib/i18n.js'
@@ -111,9 +112,12 @@ export default function FocusView({
   onAddWarmup, onRemoveSetAt, onProgressionSettings, onSwap, onRemoveExercise,
   onNoProg, busy, onSelectEntry, onAdvanceUnit, onPairPrev, onPairNext, onUnpair, pointerEpoch,
 }) {
-  const S = useStore(state => state.S)
+  const realS = useStore(state => state.S)
+  // A pinned exercise is read, stepped and shown in its own unit (lib/exercise-unit.js); the
+  // writes go through the props onto the real state, where the entry already lives in it.
+  const entry = realS.active.entries[entryIdx]
+  const S = useExerciseView(entry.id)
   const speedUnit = speedUnitOf(S)
-  const entry = S.active.entries[entryIdx]
   const ex = exOr(entry.id)
   const last = lastEntryFor(S, entry.id)
   const pinnedNote = pinnedNoteFor(S, entry.id)
