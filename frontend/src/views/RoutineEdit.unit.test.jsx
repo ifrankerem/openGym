@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// The routine editor with an exercise pinned to another unit (issue #9): profile lb, bench
+// The routine editor with an exercise pinned to another unit (upstream #657): profile lb, bench
 // pinned to kg. The row reads the plan's weight in kg, its sheet edits in kg, and saving gives
 // the exact stored number back — 35 kg is 77.1618 lb again, not a drifted 77.162.
 import React, { act } from 'react'
@@ -105,7 +105,7 @@ describe('routine editor with an exercise pinned to kg', () => {
   })
 })
 
-// Fork issue #36's own additions — upstream #657's lb-on-a-kg-profile machine: the leg press is
+// Upstream #657's lb-on-a-kg-profile machine: the leg press is
 // pinned to lb on a kg profile, so the row sheet takes the step in lb, stores it exactly in the
 // profile's unit, and the warm-up rest is untouched by any of it.
 describe('a routine row sheet with an lb-pinned machine on a kg profile', () => {

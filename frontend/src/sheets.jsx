@@ -3600,7 +3600,7 @@ export function finishWorkoutSheet({ onDiscard } = {}) {
 export const finishWorkoutNow = () => doFinishWorkout()
 function doFinishWorkout() {
   const st = S()
-  // A pinned exercise's rows are logged in its own unit (issue #6); everything past this point
+  // A pinned exercise's rows are logged in its own unit (upstream #657); everything past this point
   // works on the session as it is stored, in the profile unit (lib/exercise-unit.js).
   const A = activeToProfileUnit(st.active, st.unit || 'kg')
   if (!A) return

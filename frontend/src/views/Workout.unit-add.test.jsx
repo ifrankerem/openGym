@@ -4,7 +4,7 @@ import { parseHTML } from 'linkedom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workout from './Workout.jsx'
 
-// Adding an exercise freestyle onto one pinned to another unit (issue #6): profile lb,
+// Adding an exercise freestyle onto one pinned to another unit (upstream #657): profile lb,
 // dumbbell incline press pinned to kg, last logged at 77.1618 lb × 10. The added entry
 // opens at 35 kg with the unit stamp. Drives the real add flow in Workout.jsx: the Add
 // exercise button, the picker callback and the config commit.

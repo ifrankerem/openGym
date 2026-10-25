@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { repeatSessionEntries } from './session-repeat.js'
 
-// "Repeat today" puts a pinned exercise in its own unit (issue #6): profile lb, dumbbell
+// "Repeat today" puts a pinned exercise in its own unit (upstream #657): profile lb, dumbbell
 // incline press pinned to kg, logged at 77.1618 lb × 10. An unpinned exercise repeats as today.
 const PINNED = '3545'   // dumbbell incline alternate press
 const PLAIN = '0043'    // barbell squat

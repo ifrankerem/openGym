@@ -62,7 +62,7 @@ function carriedWarmups(st, cfg, routine, noProg) {
  * `noProg` builds the routine's own numbers with no prescription, as an excluded routine does.
  */
 export function buildPlannedEntry(stored, cfg, routine, { noProg = false } = {}) {
-  // A pinned exercise is built in its own unit (issue #6): from a view of the state whose
+  // A pinned exercise is built in its own unit (upstream #657): from a view of the state whose
   // weights are already in it, so the grid, the bar and the plate list are that unit's, and the
   // entry says which unit its rows are in. Everything stays stored in the profile unit
   // (lib/exercise-unit.js); finishing the session converts the entry back.

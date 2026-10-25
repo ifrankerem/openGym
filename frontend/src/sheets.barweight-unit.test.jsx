@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// The bar weight of a pinned exercise (issue #8): profile lb, bench pinned to kg — the sheet
+// The bar weight of a pinned exercise (upstream #657): profile lb, bench pinned to kg — the sheet
 // shows the bar in kg and stores it in lb, exactly, so reopening reads the same 15 back.
 import React, { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

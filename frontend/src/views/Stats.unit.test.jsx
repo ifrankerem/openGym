@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// Stats' exercise progress for an exercise pinned to another unit (issue #11): profile lb, the
+// Stats' exercise progress for an exercise pinned to another unit (upstream #657): profile lb, the
 // press pinned to kg. Its picker label, chart, session lines and best read in kg; the bench
 // beside it stays in lb.
 import React, { act } from 'react'

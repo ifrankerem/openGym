@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// The Focus view of one exercise pinned to another unit (issue #8): profile lb, bench pinned
+// The Focus view of one exercise pinned to another unit (upstream #657): profile lb, bench pinned
 // to kg — the Load stepper reads its weight in kg and steps by the kg increment.
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'

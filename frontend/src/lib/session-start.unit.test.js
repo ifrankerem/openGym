@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildSessionEntries } from './session-start.js'
 import { isWarmupRow } from './workout-model.js'
 
-// A planned session builds a pinned exercise in its own unit (issue #6): profile lb, bench
+// A planned session builds a pinned exercise in its own unit (upstream #657): profile lb, bench
 // pinned to kg. 77.1618 lb is 35 kg, inc 5.5116 lb is 2.5 kg, 44.0925 lb is 20 kg.
 const BENCH = '0025'
 const SQUAT = '0043'
@@ -66,7 +66,7 @@ describe('planned session builds a pinned exercise in its own unit', () => {
     expect(pinned).toEqual(plain)
   })
 
-  // Issue #32's carry case: two warm-ups logged last time, stored in the profile's lb, carried
+  // Upstream #657's carry case: two warm-ups logged last time, stored in the profile's lb, carried
   // into the pinned build as the kg rows they were logged as.
   it('carries both logged warm-ups in kg, their lb storage read through the view', () => {
     const st = state([
