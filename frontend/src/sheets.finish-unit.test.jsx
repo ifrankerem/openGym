@@ -4,6 +4,7 @@
 // with no unit stamp, and the PR and working weight are judged in lb.
 import React, { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRoot } from 'react-dom/client'
 import { DEF, useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { finishWorkout } from './sheets.jsx'
@@ -78,5 +79,69 @@ describe('finish stores a pinned exercise back in the profile unit', () => {
     const [entry] = S().workouts.find(x => x.id === 'fin').entries
     expect(entry.sets[0]).toMatchObject({ w: 82.6733, r: 8, done: true, hr: 130 })
     expect('unit' in entry).toBe(false)
+  })
+})
+
+// Upstream #657: the summary reads a pinned exercise in its own unit, both the day just logged
+// and last time — found live on Android, where a press pinned to kg read
+// "Today: 44.1 lb × 10, 10, 10". "Next time" already built its plan in kg; its label follows it.
+// The session's own total volume stays in the profile unit.
+describe('finish summary with a pinned exercise', () => {
+  const mounted = []
+  const PRESS = '3545'   // dumbbell incline alternate press
+
+  // lb profile, a linear routine, the press pinned to kg. Yesterday's press at 44.0925 lb is
+  // 20 kg on the pin view, and today is logged at the same 20 kg, so next time opens a notch up
+  // at 22.5 kg.
+  function install() {
+    const st = clone(DEF)
+    st.unit = 'lb'
+    st.exUnit = { [PRESS]: { unit: 'kg', _ts: 1 } }
+    st.routines = [{ id: 'r1', name: 'Push', prog: 'linear', ex: [{ id: PRESS, sets: 3, reps: 10, weight: 44.0925, inc: 5.5116, mode: 'reps' }] }]
+    st.workouts = [{
+      id: 'w0', d: '2026-09-30', start: 1, end: 2, routineIds: ['r1'],
+      entries: [{
+        id: PRESS, rid: 'r1',
+        target: { id: PRESS, sets: 3, reps: 10, weight: 44.0925, inc: 5.5116, mode: 'reps' },
+        planned: { sets: 3, reps: 10, weight: 44.0925 },
+        sets: [work(44.0925, 10), work(44.0925, 10), work(44.0925, 10)],
+      }],
+    }]
+    st.active = {
+      id: 'fin', d: '2026-10-03', start: Date.now() - 20 * 60000, routineIds: ['r1'], name: 'Push', bw: null, cur: 0,
+      entries: [{
+        id: PRESS, rid: 'r1', unit: 'kg',
+        target: { id: PRESS, sets: 3, reps: 10, weight: 20, inc: 2.5, mode: 'reps' },
+        planned: { sets: 3, reps: 10, weight: 20 },
+        sets: [work(20, 10), work(20, 10), work(20, 10)],
+      }],
+    }
+    useStore.setState({ S: st, user: null })
+  }
+
+  function summaryText() {
+    const sheet = useUI.getState().sheets.at(-1)
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    mounted.push([root, host])
+    act(() => root.render(sheet.render(() => useUI.getState().closeSheet(sheet.id))))
+    return host.textContent
+  }
+
+  afterEach(() => {
+    mounted.splice(0).forEach(([root, host]) => { root.unmount(); host.remove() })
+  })
+
+  it('reads today, last time and next time in kg, and the total volume in lb', () => {
+    install()
+    act(() => finishWorkout())
+    const text = summaryText()
+    expect(text).toContain('Today: 20 kg × 10, 10, 10')
+    expect(text).toContain('Last time: 20 kg × 10, 10, 10')
+    expect(text).toContain('Next time: 22.5 kg')
+    // The volume is the session's own, in the profile unit.
+    const volume = [...mounted.at(-1)[1].querySelectorAll('.tile .v')].map(el => el.textContent).find(v => v.includes('lb'))
+    expect(volume).toBeTruthy()
   })
 })

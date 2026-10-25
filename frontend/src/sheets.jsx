@@ -57,7 +57,7 @@ import { finishCompare, finishCardio } from './lib/finish-compare.js'
 import { workoutFit, fitFileName } from './lib/fit-export.js'
 import { joinSessionNoProg } from './lib/session-noprog.js'
 import { buildCombinedEntries, deriveSessionName } from './lib/session-merge.js'
-import { activeToProfileUnit, sessionEntryInUnit, convertExact, exerciseUnit, canPinUnit, cfgInUnit, UNIT_PLACES_STORED, UNIT_PLACES_SHOWN } from './lib/exercise-unit.js'
+import { activeToProfileUnit, sessionEntryInUnit, convertExact, exerciseUnit, canPinUnit, cfgInUnit, entryInUnit, UNIT_PLACES_STORED, UNIT_PLACES_SHOWN } from './lib/exercise-unit.js'
 import { convertWeight } from './lib/units.js'
 import { useExerciseView } from './store/useExerciseView.js'
 import { workoutsOn, backfillStart, backfillEnd, completeBackfill, historyAsOf, sessionHistory } from './lib/backfill.js'
@@ -982,7 +982,8 @@ export const barDefaultsSheet = () => ui().openSheet(close => <BarDefaultsSheet 
 // Estimated 1RM for one exercise (issue #18): what the log already implies, plus a calculator
 // for a set you have not done — so the number is reachable before there is any history.
 function OneRM({ ex }) {
-  const st = useStore(s => s.S)
+  // A pinned exercise is estimated, and read, in its own unit (upstream #657, lib/exercise-unit.js).
+  const st = useExerciseView(ex.id)
   const best = best1RM(st, ex.id)
   const [w, setW] = useState(best ? best.w : (st.exWeights[ex.id] || {}).w || 20)
   const [r, setR] = useState(best ? best.r : 5)
@@ -1039,7 +1040,10 @@ export function detailTags(ex) {
 
 function ExerciseDetail({ ex, close }) {
   useLang() // the description and steps arrive in their own chunk the first time a sheet asks
-  const st = useStore(s => s.S)
+  // Every weight this sheet prints is the exercise's own (upstream #657): its history and best read
+  // through the view, and the unit printed beside them is the view's. Writes still go through
+  // update on the real state, so the view only ever reads.
+  const st = useExerciseView(ex.id)
   const last = lastEntryFor(st, ex.id)
   const best = bestWeightFor(st, ex.id, currentDbLoad(st, ex.id))
   const fav = isFav(st, ex.id)
@@ -1100,7 +1104,10 @@ export const exerciseDetailSheet = ex => ui().openSheet(close => <ExerciseDetail
 // every store tick while a session runs, and LineChart drops its hover whenever `points`
 // changes identity, so a series rebuilt per render would lose the tooltip under your finger.
 function ExerciseHistory({ exId }) {
-  const st = useStore(s => s.S)
+  // The list, the best and the chart of a pinned exercise in its own unit (upstream #657); an
+  // unpinned exercise gets the state itself back and reads exactly as it always did.
+  const profile = useStore(x => x.S)
+  const st = useExerciseView(exId)
   const ex = exOr(exId)
   const h = useMemo(() => exerciseHistory(st, exId), [st.workouts, exId])
   const [curve, setCurve] = useState('top')
@@ -1112,7 +1119,9 @@ function ExerciseHistory({ exId }) {
     <div className="empty"><div className="ico"><Icon name="history" /></div>{t('No sessions logged yet')}</div>
   </>
   const tail = s => [
-    s.volume > 0 && t('Volume') + ' ' + fmtVol(s.volume, st.unit),
+    // The session's volume is a total of the whole workout, so it stays in the profile's unit;
+    // the estimate is this exercise's own weight, in its unit.
+    s.volume > 0 && t('Volume') + ' ' + fmtVol(s.volume, profile.unit),
     s.e1rm != null && t('Est. 1RM') + ' ' + fmtNum(s.e1rm) + ' ' + st.unit,
   ].filter(Boolean).join(' · ')
   return <>
@@ -2679,14 +2688,23 @@ function WorkoutDetail({ w, close }) {
     })
   }, [])
   const nameOf = e => (EXIDX[e.id] ? exerciseNameFor(EXIDX[e.id]) : (e.n || e.id))
+  // The unit tag only earns its place in a workout that holds a pinned exercise (upstream #657):
+  // with none, every row would repeat the profile's own unit.
+  const pinned = (w.entries || []).some(e => exerciseUnit(st, e.id) !== (st.unit || 'kg'))
   // Tapping an exercise opens its history (Discord 'Improvement ideas'): from one session to the
   // curve it sits on, which is the question a past workout raises most often.
   const entryRow = (e, i) => {
     const ex = EXIDX[e.id]
+    // A pinned exercise's sets read in its own unit, with that unit named beside them (upstream
+    // #657); an unpinned one keeps the set line exactly as it was, the profile's numbers in the
+    // profile's unit.
+    const unit = exerciseUnit(st, e.id)
+    const shown = unit === (st.unit || 'kg') ? e : entryInUnit(e, st.unit || 'kg', unit, UNIT_PLACES_SHOWN)
     return <div key={i} className="row wd-ex" style={{ alignItems: 'flex-start' }} {...tappable(() => exerciseHistorySheet(e.id))}>
       {ex && <Thumb ex={ex} />}
       <div className="grow"><div className={`tt ${exerciseNameClass(ex)}`} style={{ fontWeight: 600 }}>{nameOf(e)} {w.prs && w.prs.includes(e.id) && <span className="pr"><Icon name="trophy" />PR</span>}</div>
-        <div className="ss">{e.sets.filter(hasCompletedWork).map(s => setLabel(e.id, s, e.target, speedUnitOf(st)) + hrLabel(s)).join('  ·  ') || t('no sets')}</div>
+        <div className="ss">{shown.sets.filter(hasCompletedWork).map(s => setLabel(e.id, s, shown.target, speedUnitOf(st)) + hrLabel(s)).join('  ·  ') || t('no sets')}</div>
+        {pinned && <span className="tag nocap" style={{ marginTop: 3 }}>{unit}</span>}
         {e.note && <div className="small dim" style={{ marginTop: 3 }}>
           {e.notePin && <Icon name="pin" style={{ fontSize: 12, marginInlineEnd: 4, verticalAlign: '-1px', color: 'var(--yellow)' }} />}{e.note}
         </div>}</div>
@@ -3495,9 +3513,10 @@ function LastAndNext({ st, w }) {
           {tr ? <span style={{ color: tr[1], display: 'inline-flex' }} aria-label={row.trend > 0 ? t('Up on last time') : row.trend < 0 ? t('Down on last time') : t('Same as last time')}><Icon name={tr[0]} /></span>
             : <span className="tag nocap">{t('First time')}</span>}
         </div>
-        <div className="small">{t('Today')}: {setsLine(row.today, st.unit)}</div>
-        {row.last && <div className="small dim">{t('Last time')}: {setsLine(row.last, st.unit)}</div>}
-        {row.next && <div className="small accent">{t('Next time')}: {row.next.w != null ? fmtNum(row.next.w) + ' ' + st.unit : ''}{row.next.w != null && row.next.r != null ? ' × ' : ''}{row.next.r != null ? row.next.r : ''} · {nextWord[row.next.kind]}</div>}
+        {/* The rows are already in the exercise's own unit (finish-compare.js), pinned or not. */}
+        <div className="small">{t('Today')}: {setsLine(row.today, row.unit)}</div>
+        {row.last && <div className="small dim">{t('Last time')}: {setsLine(row.last, row.unit)}</div>}
+        {row.next && <div className="small accent">{t('Next time')}: {row.next.w != null ? fmtNum(row.next.w) + ' ' + row.unit : ''}{row.next.w != null && row.next.r != null ? ' × ' : ''}{row.next.r != null ? row.next.r : ''} · {nextWord[row.next.kind]}</div>}
       </div>
     })}</div>
   </div>
@@ -3533,7 +3552,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     </div>
     {(prs.length > 0 || e1prs.length > 0) && <div style={{ textAlign: 'start', marginBottom: 12 }}>
       {prs.map(id => <div key={id} className="small accent row" style={{ gap: 5 }}><Icon name="trophy" style={{ fontSize: 13 }} />{t('New PR:')} <span className={exerciseNameClass(EXIDX[id])}>{EXIDX[id] ? exerciseNameFor(EXIDX[id]) : id}</span></div>)}
-      {e1prs.map(p => <div key={p.id} className="small accent row" style={{ gap: 5 }}><Icon name="chartLine" style={{ fontSize: 13 }} />{t('Best estimated 1RM:')} <span className={exerciseNameClass(EXIDX[p.id])}>{EXIDX[p.id] ? exerciseNameFor(EXIDX[p.id]) : p.id}</span> · {fmtNum(p.est)} {st.unit}</div>)}
+      {e1prs.map(p => <div key={p.id} className="small accent row" style={{ gap: 5 }}><Icon name="chartLine" style={{ fontSize: 13 }} />{t('Best estimated 1RM:')} <span className={exerciseNameClass(EXIDX[p.id])}>{EXIDX[p.id] ? exerciseNameFor(EXIDX[p.id]) : p.id}</span> · {fmtNum(convertExact(p.est, st.unit || 'kg', exerciseUnit(st, p.id), UNIT_PLACES_SHOWN))} {exerciseUnit(st, p.id)}</div>)}
     </div>}
     <h4 className="sec" style={{ textAlign: 'start' }}>{t('What you just trained')}</h4>
     <BodyMap load={loadOfWorkouts([w])} body={st.body} />
