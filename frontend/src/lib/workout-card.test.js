@@ -41,6 +41,26 @@ describe('workoutCardModel', () => {
     expect(workoutCardModel(w, { unit: 'kg', nameOf }).records).toEqual(['Barbell Bench Press', 'Dumbbell Curl'])
   })
 
+  // A per-exercise unit (upstream #657): the card keeps its totals in the profile's unit and
+  // answers the same whether or not it is given `unitOf` — there is no per-exercise set line on
+  // it today.
+  const pinned = {
+    ...w, vol: 6610,
+    entries: [
+      { id: 'bench', target: { mode: 'reps' }, sets: [{ w: 135, r: 5, done: true }] },
+      { id: 'curl', target: { mode: 'reps' }, sets: [{ w: 77.1618, r: 10, done: true }] },
+    ],
+  }
+  const unitOf = id => (id === 'curl' ? 'kg' : 'lb')
+
+  it('answers the same whether or not a unitOf is given, totals in the profile unit', () => {
+    const withPins = workoutCardModel(pinned, { unit: 'lb', nameOf, unitOf })
+    const without = workoutCardModel(pinned, { unit: 'lb', nameOf })
+    expect(stat(withPins)).toContain('Volume 6,610 lb')
+    expect(withPins.records).toEqual(without.records)
+    expect(withPins.stats.map(s => s.value)).toEqual(without.stats.map(s => s.value))
+  })
+
   it('leaves out a duration it does not know and works the volume out when none was saved', () => {
     const imported = { ...w, start: undefined, end: undefined, vol: undefined, prs: undefined }
     const m = workoutCardModel(imported, { unit: 'lb', nameOf })

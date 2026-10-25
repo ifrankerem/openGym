@@ -7,14 +7,16 @@ import { EXIDX } from './exercises.js'
 import { hasCompletedWork, isWarmupRow } from './workout-model.js'
 import { fmtDate, fmtNum, fmtVol, durPart, capWords } from './format.js'
 import { t, exerciseNameClass } from './i18n-core.js'
+import { entryInUnit, UNIT_PLACES_SHOWN } from './exercise-unit.js'
 
 /**
  * `unit` is the profile's, `nameOf(entry)` the exercise's display name, `speedUnit` the one cardio
- * is shown in (lib/speed.js; km/h when absent). Blocks are separated by a blank line: the heading,
- * then each exercise (a superset's under one "Superset" line, its members together), then the
- * session note.
+ * is shown in (lib/speed.js; km/h when absent). `unitOf(exId)`, when given, is the unit each
+ * exercise is worked in (upstream #657): its sets are read there, the totals above stay in `unit`.
+ * Blocks are separated by a blank line: the heading, then each exercise (a superset's under one
+ * "Superset" line, its members together), then the session note.
  */
-export function workoutText(w, { unit, nameOf, speedUnit }) {
+export function workoutText(w, { unit, nameOf, speedUnit, unitOf }) {
   const facts = [
     ...durPart((w.end || 0) - (w.start || 0)),
     fmtVol(w.vol ?? workoutVolume(w), unit),
@@ -25,12 +27,16 @@ export function workoutText(w, { unit, nameOf, speedUnit }) {
   // left out of volume, records and progression everywhere else, and listed here with nothing to
   // tell them apart they would read as sets of their own.
   const lines = entry => {
-    const sets = (entry.sets || []).filter(s => hasCompletedWork(s) && !isWarmupRow(s))
+    // A pinned exercise's sets are read in its own unit (upstream #657); the heading's totals — the
+    // session's volume and body weight — stay in the profile's unit.
+    const exUnit = unitOf ? unitOf(entry.id) : unit
+    const shown = exUnit === unit ? entry : entryInUnit(entry, unit, exUnit, UNIT_PLACES_SHOWN)
+    const sets = (shown.sets || []).filter(s => hasCompletedWork(s) && !isWarmupRow(s))
     if (!sets.length) return null
     // Title case the way the screen shows it (exerciseNameClass): an English name gets it, a
     // translated one keeps its own casing, which German's capitalised nouns depend on.
     const name = nameOf(entry)
-    return [exerciseNameClass(EXIDX[entry.id]) ? capWords(name) : name, sets.map(s => setLabel(entry.id, s, entry.target, speedUnit)).join(', '), ...(entry.note ? [entry.note] : [])]
+    return [exerciseNameClass(EXIDX[entry.id]) ? capWords(name) : name, sets.map(s => setLabel(entry.id, s, shown.target, speedUnit)).join(', '), ...(entry.note ? [entry.note] : [])]
   }
   // Grouped the way the detail sheet groups it (sessionSections): per routine first, so a
   // superset is only ever paired inside one routine's section, in the order the sheet lists them.
