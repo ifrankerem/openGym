@@ -3,12 +3,17 @@
    its own changes (an older app, an API planner) must hold in this side's merge. */
 import { describe, expect, it } from 'vitest'
 import * as S from '../../../api/sync-stamps.js'
-import { highestStamp, mergeDeletions, mergeEdits, mergeStates, stampChange, stampEntry, stampEdits, stampRestore } from './sync-merge.js'
+import { STAMPED_MAPS, highestStamp, mergeDeletions, mergeEdits, mergeStates, stampChange, stampEntry, stampEdits, stampRestore } from './sync-merge.js'
 
 const clone = v => JSON.parse(JSON.stringify(v))
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296 } }
 
 describe('api/sync-stamps.js matches sync-merge.js', () => {
+  it('on the stamped maps, exUnit last (issue #31)', () => {
+    expect(S.STAMPED_MAPS).toEqual(STAMPED_MAPS)
+    expect(STAMPED_MAPS.slice(-2)).toEqual(['dayPhotos', 'exUnit'])
+  })
+
   it('on random records and entries', () => {
     for (let seed = 1; seed < 300; seed++) {
       const R = rng(seed)
