@@ -10,6 +10,7 @@ import { dropGrid } from './plates.js'
 import { backoffStepOf, applyBackoff } from './backoff.js'
 import { dbLoadFor, historyAs, ownedWeightsFor } from './dumbbells.js'
 import { isAssisted } from './exercises.js'
+import { exerciseUnit, exerciseView, cfgInUnit, UNIT_PLACES_SHOWN } from './exercise-unit.js'
 
 /**
  * Where a planned session's reps come from (Settings → During a workout). 'plan', the default:
@@ -61,31 +62,40 @@ function carriedWarmups(st, cfg, routine, noProg) {
  * `noProg` builds the routine's own numbers with no prescription, as an excluded routine does.
  */
 export function buildPlannedEntry(stored, cfg, routine, { noProg = false } = {}) {
+  // A pinned exercise is built in its own unit (issue #6): from a view of the state whose
+  // weights are already in it, so the grid, the bar and the plate list are that unit's, and the
+  // entry says which unit its rows are in. Everything stays stored in the profile unit
+  // (lib/exercise-unit.js); finishing the session converts the entry back.
+  const profileUnit = stored?.unit || 'kg'
+  const unit = exerciseUnit(stored, cfg.id)
+  const pinned = unit !== profileUnit
+  const src = pinned ? exerciseView(stored, cfg.id) : stored
+  const cfgIn = pinned ? cfgInUnit(cfg, profileUnit, unit, UNIT_PLACES_SHOWN) : cfg
   // What a dumbbell weight means for this exercise today (lib/dumbbells.js): the history it
   // progresses from is read in that meaning, so a switch from "40 total" to per bell opens at
   // 20, not at 40 a hand. Only a switch between the two explicit meanings converts anything.
-  const meaning = dbLoadFor(stored, cfg)
-  const st = historyAs(stored, cfg.id, meaning)
+  const meaning = dbLoadFor(src, cfgIn)
+  const st = historyAs(src, cfgIn.id, meaning)
   // `plan` is kept on the entry purely so the workout can explain the number it chose.
-  const plan = noProg ? { policy: 'off', kind: 'off' } : nextPrescription(st, cfg, routine)
+  const plan = noProg ? { policy: 'off', kind: 'off' } : nextPrescription(st, cfgIn, routine)
   // The warm-up ramp and the prescription snap to the exercise's own increment (1.25 kg
   // plates exist), not the unit default; a timed exercise's `inc` is seconds, so it keeps the
   // default for its optional load.
-  const step = modeOf(cfg) === 'reps' ? weightIncrement(cfg, st.unit) : defaultIncrement(cfg.id, st.unit)
+  const step = modeOf(cfgIn) === 'reps' ? weightIncrement(cfgIn, st.unit) : defaultIncrement(cfgIn.id, st.unit)
   const planReps = !startsFromLast(st)
   // Warm-ups ramp over the dumbbells you own when the profile lists them (issue #376): a rung
   // lands on the heaviest bell under it, never on a weight in between that no rack holds.
-  const ramp = (modeOf(cfg) === 'reps' && ownedWeightsFor(st, cfg)) || step
+  const ramp = (modeOf(cfgIn) === 'reps' && ownedWeightsFor(st, cfgIn)) || step
   // Back-off sets step down from the top set by the exercise's own step (lib/backoff.js).
-  const backoffStep = modeOf(cfg) === 'reps' && backoffStepOf(cfg, st.unit) ? step : 0
+  const backoffStep = modeOf(cfgIn) === 'reps' && backoffStepOf(cfgIn, st.unit) ? step : 0
   // Warm-ups carried from the last session ("Your last session") are final: they go in front
   // AFTER the prescription, back-off and intensifier steps, none of which may rewrite them.
-  const warmCarry = carriedWarmups(st, cfg, routine, noProg)
-  const built = applyPrescription(buildSets(st, warmCarry ? { ...cfg, warmupSets: 0 } : cfg, { step: ramp, rid: routine?.id, useTarget: plan.kind === 'off', planReps }), plan, ramp, barFloor(st, cfg.id), isAssisted(cfg))
+  const warmCarry = carriedWarmups(st, cfgIn, routine, noProg)
+  const built = applyPrescription(buildSets(st, warmCarry ? { ...cfgIn, warmupSets: 0 } : cfgIn, { step: ramp, rid: routine?.id, useTarget: plan.kind === 'off', planReps }), plan, ramp, barFloor(st, cfgIn.id), isAssisted(cfg))
   const rows = backoffStep ? applyBackoff(built, backoffStep) : built
-  const shaped = applyIntensifierPlan(rows, cfg, dropGrid(st, cfg))
+  const shaped = applyIntensifierPlan(rows, cfgIn, dropGrid(st, cfgIn))
   const sets = warmCarry ? [...warmCarry, ...shaped] : shaped
-  const target = { ...cfg }
+  const target = { ...cfgIn }
   // Stamped on the session, so the meaning it was logged with stays with it (dumbbells.js).
   if (meaning !== 'as') target.dbLoad = meaning
   if (plan.weight != null) target.weight = plan.weight
@@ -104,11 +114,11 @@ export function buildPlannedEntry(stored, cfg, routine, { noProg = false } = {})
   // Rows that opened at last session's reps rather than the plan's ("Your last session", and no
   // policy that decided reps), so the workout card can say where the number came from. Written
   // only when true, and never saved with the finished workout.
-  const carried = !planReps && plan.kind !== 'off' && plan.reps == null && modeOf(cfg) === 'reps'
-    && rows.some(s => !isWarmupRow(s) && s.r !== cfg.reps)
+  const carried = !planReps && plan.kind !== 'off' && plan.reps == null && modeOf(cfgIn) === 'reps'
+    && rows.some(s => !isWarmupRow(s) && s.r !== cfgIn.reps)
   // `planned` is what the routine asked for, kept apart from the target the prescription moved,
   // so the next session can tell an edited plan from a progressed one (nextPrescription).
-  return { target, plan, sets, planned: plannedOf(cfg), ...(carried ? { carried: true } : {}) }
+  return { target, plan, sets, planned: plannedOf(cfgIn), ...(carried ? { carried: true } : {}), ...(pinned ? { unit } : {}) }
 }
 
 /**
