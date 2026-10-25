@@ -90,6 +90,22 @@ const mapEntry = (entry, conv) => {
   }
 }
 
+/**
+ * A progression line (`plan`) moving with its entry: the weight it names, and every load in the
+ * line — the number right before its own unit arg — are converted by `conv`, and that arg
+ * follows. Reps, sets and stall counts are not loads and stay as they are. A plan that names no
+ * unit, or whose kind is `off`, is the same object (#657).
+ */
+const planInUnit = (plan, from, to, conv) => {
+  if (!plan || typeof plan !== 'object' || plan.kind === 'off' || !Array.isArray(plan.why)) return plan
+  const why = plan.why.map((a, i) => {
+    if (a === from) return to
+    if (typeof a === 'number' && plan.why[i + 1] === from) return conv(a)
+    return a
+  })
+  return { ...plan, ...(plan.weight != null ? { weight: conv(plan.weight) } : {}), why }
+}
+
 /** A copy of a routine slot or target config with its weights converted exactly. */
 export const cfgInUnit = (cfg, from, to, places = UNIT_PLACES_SHOWN) =>
   (from === to ? cfg : mapCfg(cfg, v => convertExact(v, from, to, places)))
@@ -209,10 +225,14 @@ export function setExerciseUnit(S, exId, unit, now = Date.now()) {
     out.active = { ...S.active, entries: S.active.entries.map(e => {
       if (e?.id !== exId) return e
       // The active entry is the one that lives in the pin's unit, so it is converted on the
-      // grid (what the lifter will load) rather than exactly.
-      const moved = mapEntry(e, v => convertWeight(v, e.unit || from, unit))
-      if (pinning) return { ...moved, unit }
-      const { unit: _stamp, ...rest } = moved
+      // grid (what the lifter will load) rather than exactly. Its progression line is shown above
+      // the rows, so it moves in the same pass.
+      const conv = v => convertWeight(v, e.unit || from, unit)
+      const moved = mapEntry(e, conv)
+      const plan = planInUnit(e.plan, e.unit || from, unit, conv)
+      const withPlan = plan === e.plan ? moved : { ...moved, plan }
+      if (pinning) return { ...withPlan, unit }
+      const { unit: _stamp, ...rest } = withPlan
       return rest
     }) }
   }
