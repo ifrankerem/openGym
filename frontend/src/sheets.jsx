@@ -2688,6 +2688,9 @@ function WorkoutDetail({ w, close }) {
     })
   }, [])
   const nameOf = e => (EXIDX[e.id] ? exerciseNameFor(EXIDX[e.id]) : (e.n || e.id))
+  // The unit tag only earns its place in a workout that holds a pinned exercise (upstream #657):
+  // with none, every row would repeat the profile's own unit.
+  const pinned = (w.entries || []).some(e => exerciseUnit(st, e.id) !== (st.unit || 'kg'))
   // Tapping an exercise opens its history (Discord 'Improvement ideas'): from one session to the
   // curve it sits on, which is the question a past workout raises most often.
   const entryRow = (e, i) => {
@@ -2701,7 +2704,7 @@ function WorkoutDetail({ w, close }) {
       {ex && <Thumb ex={ex} />}
       <div className="grow"><div className={`tt ${exerciseNameClass(ex)}`} style={{ fontWeight: 600 }}>{nameOf(e)} {w.prs && w.prs.includes(e.id) && <span className="pr"><Icon name="trophy" />PR</span>}</div>
         <div className="ss">{shown.sets.filter(hasCompletedWork).map(s => setLabel(e.id, s, shown.target, speedUnitOf(st)) + hrLabel(s)).join('  ·  ') || t('no sets')}</div>
-        <span className="tag nocap" style={{ marginTop: 3 }}>{unit}</span>
+        {pinned && <span className="tag nocap" style={{ marginTop: 3 }}>{unit}</span>}
         {e.note && <div className="small dim" style={{ marginTop: 3 }}>
           {e.notePin && <Icon name="pin" style={{ fontSize: 12, marginInlineEnd: 4, verticalAlign: '-1px', color: 'var(--yellow)' }} />}{e.note}
         </div>}</div>
